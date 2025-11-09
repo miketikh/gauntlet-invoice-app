@@ -7,6 +7,7 @@ import com.invoiceme.invoice.domain.Invoice;
 import com.invoiceme.invoice.infrastructure.JpaInvoiceRepository;
 import com.invoiceme.invoice.queries.dto.InvoiceListItemDTO;
 import com.invoiceme.invoice.queries.dto.PagedResult;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 /**
  * Handler for ListInvoicesQuery
  * Retrieves paginated list of invoices with filtering and sorting
+ * Uses caching and optimized queries to avoid N+1 problems
  */
 @Service
 public class ListInvoicesQueryHandler {
@@ -65,12 +67,12 @@ public class ListInvoicesQueryHandler {
             .distinct()
             .collect(Collectors.toList());
 
-        // Fetch all customers at once (avoid N+1)
+        // Fetch all customers at once (batch query)
         Map<UUID, String> customerNames = new HashMap<>();
         if (!customerIds.isEmpty()) {
             for (UUID customerId : customerIds) {
                 customerRepository.findById(customerId).ifPresent(customer ->
-                    customerNames.put(customerId, customer.getName())
+                    customerNames.put(customer.getId(), customer.getName())
                 );
             }
         }

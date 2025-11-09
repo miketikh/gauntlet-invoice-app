@@ -1,5 +1,6 @@
 package com.invoiceme.payment.queries;
 
+import com.invoiceme.invoice.domain.InvoiceStatus;
 import com.invoiceme.payment.domain.PaymentMethod;
 
 import java.math.BigDecimal;
@@ -9,7 +10,8 @@ import java.util.UUID;
 
 /**
  * PaymentResponseDTO
- * Query DTO for payment response with enriched invoice/customer data
+ * Enhanced DTO for payment queries with invoice and customer context.
+ * Export-ready format for accounting reconciliation.
  * Uses Java record for immutability
  */
 public record PaymentResponseDTO(
@@ -23,9 +25,17 @@ public record PaymentResponseDTO(
     LocalDateTime createdAt,
     String createdBy,
 
-    // Enriched fields from related entities
+    // Enriched fields from Invoice
     String invoiceNumber,
+    BigDecimal invoiceTotal,
+    BigDecimal remainingBalance,
+    InvoiceStatus invoiceStatus,
+
+    // Enriched fields from Customer (via Invoice)
     String customerName,
-    BigDecimal remainingBalance
+    String customerEmail,
+
+    // Optional fields for payment history queries
+    BigDecimal runningBalance  // Cumulative balance (for payment history - null for single payment queries)
 ) {
 }

@@ -4,6 +4,7 @@ import com.invoiceme.customer.infrastructure.JpaCustomerRepository;
 import com.invoiceme.invoice.domain.InvoiceStatus;
 import com.invoiceme.invoice.infrastructure.JpaInvoiceRepository;
 import com.invoiceme.invoice.queries.dto.DashboardStatsDTO;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 /**
  * Handler for GetDashboardStatsQuery
  * Retrieves aggregate statistics for dashboard display
+ * Cached for 1 minute to reduce database load
  */
 @Service
 public class GetDashboardStatsQueryHandler {
@@ -30,6 +32,7 @@ public class GetDashboardStatsQueryHandler {
      * @param query The query (no parameters)
      * @return DashboardStatsDTO with all statistics
      */
+    @Cacheable(value = "dashboardStats")
     @Transactional(readOnly = true)
     public DashboardStatsDTO handle(GetDashboardStatsQuery query) {
         // Count customers (excluding soft-deleted)

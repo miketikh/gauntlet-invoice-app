@@ -8,8 +8,13 @@ import com.invoiceme.invoice.queries.ListInvoicesQuery;
 import com.invoiceme.invoice.queries.ListInvoicesQueryHandler;
 import com.invoiceme.invoice.queries.dto.InvoiceListItemDTO;
 import com.invoiceme.invoice.queries.dto.PagedResult;
+import com.invoiceme.payment.queries.ListPaymentsByInvoiceQuery;
+import com.invoiceme.payment.queries.ListPaymentsByInvoiceQueryHandler;
+import com.invoiceme.payment.queries.PaymentResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -31,13 +37,16 @@ public class InvoiceQueryController {
 
     private final GetInvoiceByIdQueryHandler getInvoiceByIdQueryHandler;
     private final ListInvoicesQueryHandler listInvoicesQueryHandler;
+    private final ListPaymentsByInvoiceQueryHandler listPaymentsByInvoiceQueryHandler;
 
     public InvoiceQueryController(
         GetInvoiceByIdQueryHandler getInvoiceByIdQueryHandler,
-        ListInvoicesQueryHandler listInvoicesQueryHandler
+        ListInvoicesQueryHandler listInvoicesQueryHandler,
+        ListPaymentsByInvoiceQueryHandler listPaymentsByInvoiceQueryHandler
     ) {
         this.getInvoiceByIdQueryHandler = getInvoiceByIdQueryHandler;
         this.listInvoicesQueryHandler = listInvoicesQueryHandler;
+        this.listPaymentsByInvoiceQueryHandler = listPaymentsByInvoiceQueryHandler;
     }
 
     /**
@@ -101,6 +110,27 @@ public class InvoiceQueryController {
         );
 
         PagedResult<InvoiceListItemDTO> response = listInvoicesQueryHandler.handle(query);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get all payments for a specific invoice with running balance
+     */
+    @GetMapping("/{id}/payments")
+    @Operation(
+        summary = "Get payments for invoice",
+        description = "Retrieves all payments for specific invoice with running balance calculation"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Payment list returned successfully"),
+        @ApiResponse(responseCode = "404", description = "Invoice not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid or missing authentication")
+    })
+    public ResponseEntity<List<PaymentResponseDTO>> getPaymentsForInvoice(
+        @Parameter(description = "Invoice ID") @PathVariable UUID id
+    ) {
+        ListPaymentsByInvoiceQuery query = new ListPaymentsByInvoiceQuery(id);
+        List<PaymentResponseDTO> response = listPaymentsByInvoiceQueryHandler.handle(query);
         return ResponseEntity.ok(response);
     }
 }
