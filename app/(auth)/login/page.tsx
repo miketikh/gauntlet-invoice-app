@@ -38,6 +38,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
+  // Get the redirect path from query params
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const from = searchParams.get('from') || '/dashboard';
+
   const {
     register,
     handleSubmit,
@@ -55,8 +59,8 @@ export default function LoginPage() {
       // Call auth store login method
       await login(data.username, data.password);
 
-      // Redirect to dashboard on success
-      router.push("/dashboard");
+      // Redirect to original destination or dashboard
+      router.push(from);
     } catch (error) {
       // Handle authentication errors
       if (error instanceof AuthError) {

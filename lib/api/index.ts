@@ -4,6 +4,8 @@
 
 export { authApi, AuthError, authClient } from './auth';
 export { apiClient, createApiClient } from './client';
+export * from './invoices';
+export * from './customers';
 export type {
   LoginRequest,
   LoginResponse,
@@ -12,4 +14,21 @@ export type {
   ApiError,
   User,
   AuthState,
+  Customer,
+  CreateCustomerDTO,
+  UpdateCustomerDTO,
+  CustomerResponseDTO,
+  CustomerListItemDTO,
+  PagedCustomerResponse,
+  InvoiceStatus,
+  LineItemFormData,
+  InvoiceFormData,
+  LineItemDTO,
+  CreateInvoiceDTO,
+  UpdateInvoiceDTO,
+  LineItemResponseDTO,
+  InvoiceResponseDTO,
+  InvoiceListItemDTO,
+  InvoiceTotals,
+  CalculatedLineItem,
 } from './types';

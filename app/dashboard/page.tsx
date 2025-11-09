@@ -1,9 +1,11 @@
 "use client";
 
 import { useAuth } from "@/lib/stores/auth-store";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
 
   return (
     <div className="space-y-6">
@@ -73,13 +75,13 @@ export default function DashboardPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => window.alert("Invoice creation coming soon!")}
+            onClick={() => router.push("/invoices/new")}
             className="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-md hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors font-medium"
           >
             Create Invoice
           </button>
           <button
-            onClick={() => window.alert("Customer management coming soon!")}
+            onClick={() => router.push("/customers/new")}
             className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
           >
             Add Customer

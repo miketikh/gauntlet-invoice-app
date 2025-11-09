@@ -109,3 +109,118 @@ export interface PagedCustomerResponse {
   first: boolean;
   last: boolean;
 }
+
+// Invoice domain models
+export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid';
+
+export interface LineItemFormData {
+  id?: string; // temporary UI id for React keys
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number; // 0-1 decimal (e.g., 0.10 = 10%)
+  taxRate: number; // 0-1 decimal (e.g., 0.08 = 8%)
+  // Calculated fields (computed, read-only in UI)
+  subtotal?: number;
+  discountAmount?: number;
+  taxableAmount?: number;
+  taxAmount?: number;
+  total?: number;
+}
+
+export interface InvoiceFormData {
+  customerId: string;
+  issueDate: Date;
+  dueDate: Date;
+  paymentTerms: string;
+  lineItems: LineItemFormData[];
+  notes?: string;
+}
+
+// Invoice DTOs for API operations
+export interface LineItemDTO {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent?: number;
+  taxRate?: number;
+}
+
+export interface CreateInvoiceDTO {
+  customerId: string;
+  issueDate: string; // ISO string for API
+  dueDate: string; // ISO string for API
+  paymentTerms: string;
+  lineItems: LineItemDTO[];
+  notes?: string;
+}
+
+export interface UpdateInvoiceDTO extends CreateInvoiceDTO {
+  version: number; // for optimistic locking
+}
+
+// Response DTOs
+export interface LineItemResponseDTO {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number;
+  taxRate: number;
+  subtotal: number;
+  discountAmount: number;
+  taxableAmount: number;
+  taxAmount: number;
+  total: number;
+}
+
+export interface InvoiceResponseDTO {
+  id: string;
+  invoiceNumber: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  issueDate: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  paymentTerms: string;
+  subtotal: number;
+  totalDiscount: number;
+  totalTax: number;
+  totalAmount: number;
+  balance: number;
+  lineItems: LineItemResponseDTO[];
+  notes?: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  daysOverdue?: number;
+}
+
+export interface InvoiceListItemDTO {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  customerEmail: string;
+  issueDate: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  totalAmount: number;
+  balance: number;
+  daysOverdue?: number;
+}
+
+export interface InvoiceTotals {
+  subtotal: number;
+  totalDiscount: number;
+  totalTax: number;
+  totalAmount: number;
+}
+
+export interface CalculatedLineItem extends LineItemFormData {
+  subtotal: number;
+  discountAmount: number;
+  taxableAmount: number;
+  taxAmount: number;
+  total: number;
+}

@@ -3,6 +3,7 @@ package com.invoiceme.invoice.commands.dto;
 import com.invoiceme.customer.domain.Customer;
 import com.invoiceme.invoice.domain.Invoice;
 import com.invoiceme.invoice.domain.LineItem;
+import com.invoiceme.invoice.queries.dto.InvoiceListItemDTO;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -88,6 +89,30 @@ public class InvoiceMapper {
             invoice.getVersion(),
             invoice.getCreatedAt(),
             invoice.getUpdatedAt(),
+            daysOverdue
+        );
+    }
+
+    /**
+     * Converts Invoice to InvoiceListItemDTO (lightweight for lists)
+     * @param invoice The invoice domain object
+     * @param customerName The customer name (already fetched)
+     * @return InvoiceListItemDTO
+     */
+    public static InvoiceListItemDTO toInvoiceListItemDTO(Invoice invoice, String customerName) {
+        Integer daysOverdue = calculateDaysOverdue(invoice);
+
+        return new InvoiceListItemDTO(
+            invoice.getId(),
+            invoice.getInvoiceNumber(),
+            invoice.getCustomerId(),
+            customerName,
+            invoice.getIssueDate(),
+            invoice.getDueDate(),
+            invoice.getStatus(),
+            invoice.getTotalAmount(),
+            invoice.getBalance(),
+            invoice.getVersion(),
             daysOverdue
         );
     }

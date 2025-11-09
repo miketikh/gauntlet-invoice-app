@@ -1,6 +1,7 @@
 package com.invoiceme.config;
 
 import com.invoiceme.customer.domain.CustomerNotFoundException;
+import com.invoiceme.invoice.domain.exceptions.InvoiceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,6 +27,20 @@ public class GlobalExceptionHandler {
         );
         problemDetail.setTitle("Customer Not Found");
         problemDetail.setProperty("customerId", ex.getCustomerId());
+        return problemDetail;
+    }
+
+    /**
+     * Handles InvoiceNotFoundException
+     * Returns 404 Not Found
+     */
+    @ExceptionHandler(InvoiceNotFoundException.class)
+    public ProblemDetail handleInvoiceNotFoundException(InvoiceNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+            HttpStatus.NOT_FOUND,
+            ex.getMessage()
+        );
+        problemDetail.setTitle("Invoice Not Found");
         return problemDetail;
     }
 
