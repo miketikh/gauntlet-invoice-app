@@ -2,6 +2,7 @@ package com.invoiceme.customer.infrastructure;
 
 import com.invoiceme.customer.domain.Customer;
 import com.invoiceme.customer.domain.CustomerRepository;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,8 +14,10 @@ import java.util.UUID;
 /**
  * JPA implementation of CustomerRepository
  * Extends Spring Data JPA repository and implements domain interface
+ * Marked as @Primary to be used for command operations when CustomerRepository is injected
  */
 @Repository
+@Primary
 public interface JpaCustomerRepository extends JpaRepository<Customer, UUID>, CustomerRepository {
 
     /**

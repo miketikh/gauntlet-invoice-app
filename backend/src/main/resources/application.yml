@@ -82,3 +82,6 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: ${SWAGGER_ENABLED:true}
+    default-models-expand-depth: 3  # Expand models by default (0 = collapsed, -1 = fully expanded)
+    default-model-expand-depth: 3   # How deep to expand individual model properties
+    doc-expansion: list             # Expand operations list by default (none, list, full)
