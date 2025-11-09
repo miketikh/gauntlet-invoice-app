@@ -26,7 +26,7 @@ import java.util.UUID;
  * Handles create, update, and send invoice operations
  */
 @RestController
-@RequestMapping("/api/invoices")
+@RequestMapping("/invoices")
 @RequiredArgsConstructor
 @Tag(name = "Invoice Commands", description = "Invoice write operations")
 public class InvoiceCommandController {

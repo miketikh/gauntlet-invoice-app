@@ -365,7 +365,7 @@ class InvoiceTest {
         // Act & Assert
         assertThatThrownBy(() -> invoice.applyPayment(new BigDecimal("150.00")))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Payment exceeds balance");
+            .hasMessageContaining("Payment amount cannot exceed invoice balance");
     }
 
     @Test

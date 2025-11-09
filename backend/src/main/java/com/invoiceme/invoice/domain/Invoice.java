@@ -177,14 +177,20 @@ public class Invoice {
 
     /**
      * Marks invoice as sent - transitions from Draft to Sent
+     * Initializes balance to equal totalAmount when first sent
      * @throws InvalidInvoiceStateException if invoice cannot be sent
      */
     public void markAsSent() {
         if (!canBeSent()) {
             throw new InvalidInvoiceStateException("Cannot send invoice without line items");
         }
+        if (this.totalAmount.compareTo(BigDecimal.ZERO) == 0) {
+            throw new InvalidInvoiceStateException("Cannot send invoice with zero total amount");
+        }
         InvoiceStatus oldStatus = this.status;
         this.status = InvoiceStatus.Sent;
+        // Initialize balance when invoice is first sent (balance was set by calculateTotals)
+        // The balance field is already set to totalAmount by calculateTotals() method
         domainEvents.add(new InvoiceStatusChanged(this.id, oldStatus, InvoiceStatus.Sent));
     }
 
@@ -205,16 +211,28 @@ public class Invoice {
     }
 
     /**
+     * Checks if invoice can accept payment
+     * @return true if invoice is in Sent status
+     */
+    public boolean canAcceptPayment() {
+        return this.status == InvoiceStatus.Sent;
+    }
+
+    /**
      * Applies a payment to reduce the invoice balance
+     * Auto-transitions to Paid when balance reaches zero
      * @param paymentAmount The payment amount
      * @throws IllegalArgumentException if payment amount is invalid
      */
     public void applyPayment(BigDecimal paymentAmount) {
+        if (!canAcceptPayment()) {
+            throw new IllegalArgumentException("Invoice must be in Sent status to accept payments");
+        }
         if (paymentAmount == null || paymentAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Payment amount must be positive");
         }
         if (paymentAmount.compareTo(balance) > 0) {
-            throw new IllegalArgumentException("Payment exceeds balance");
+            throw new IllegalArgumentException("Payment amount cannot exceed invoice balance");
         }
         this.balance = this.balance.subtract(paymentAmount);
 

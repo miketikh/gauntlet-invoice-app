@@ -24,7 +24,7 @@ import java.util.UUID;
  * Handles GET requests for invoice retrieval
  */
 @RestController
-@RequestMapping("/api/invoices")
+@RequestMapping("/invoices")
 @Tag(name = "Invoice Queries", description = "Invoice retrieval and listing operations")
 @SecurityRequirement(name = "bearer-jwt")
 public class InvoiceQueryController {

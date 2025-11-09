@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Provides aggregate data for dashboard display
  */
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/dashboard")
 @Tag(name = "Dashboard", description = "Dashboard statistics and analytics")
 @SecurityRequirement(name = "bearer-jwt")
 public class DashboardController {
