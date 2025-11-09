@@ -120,6 +120,7 @@ public class PaymentHistoryQueryHandler {
     /**
      * Enriches payments with invoice and customer data
      * Uses batching to avoid N+1 queries
+     * Calculates running balance for each invoice's payments
      *
      * @param payments List of payment entities
      * @return List of enriched PaymentResponseDTOs
@@ -149,7 +150,37 @@ public class PaymentHistoryQueryHandler {
             }
         }
 
-        // Map to DTOs
+        // Group payments by invoice and calculate running balances
+        Map<UUID, List<Payment>> paymentsByInvoice = payments.stream()
+            .collect(Collectors.groupingBy(Payment::getInvoiceId));
+
+        Map<UUID, java.math.BigDecimal> runningBalanceMap = new HashMap<>();
+
+        for (Map.Entry<UUID, List<Payment>> entry : paymentsByInvoice.entrySet()) {
+            UUID invoiceId = entry.getKey();
+            List<Payment> invoicePayments = entry.getValue();
+            Invoice invoice = invoiceMap.get(invoiceId);
+
+            if (invoice != null) {
+                // Sort payments chronologically by date, then by creation time
+                invoicePayments.sort((p1, p2) -> {
+                    int dateCompare = p1.getPaymentDate().compareTo(p2.getPaymentDate());
+                    if (dateCompare != 0) {
+                        return dateCompare;
+                    }
+                    return p1.getCreatedAt().compareTo(p2.getCreatedAt());
+                });
+
+                // Calculate running balance for each payment
+                java.math.BigDecimal runningBalance = invoice.getTotalAmount();
+                for (Payment payment : invoicePayments) {
+                    runningBalance = runningBalance.subtract(payment.getAmount());
+                    runningBalanceMap.put(payment.getId(), runningBalance);
+                }
+            }
+        }
+
+        // Map to DTOs with running balances
         return payments.stream()
             .map(payment -> {
                 Invoice invoice = invoiceMap.get(payment.getInvoiceId());
@@ -160,7 +191,8 @@ public class PaymentHistoryQueryHandler {
                     return null;
                 }
 
-                return PaymentMapper.toResponseDTO(payment, invoice, customer);
+                java.math.BigDecimal runningBalance = runningBalanceMap.get(payment.getId());
+                return PaymentMapper.toResponseDTO(payment, invoice, customer, runningBalance);
             })
             .filter(dto -> dto != null)
             .collect(Collectors.toList());

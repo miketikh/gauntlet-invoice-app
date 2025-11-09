@@ -399,11 +399,11 @@ export default function PaymentsPage() {
                           {payment.reference}
                         </TableCell>
                         <TableCell className="font-semibold">
-                          {formatCurrency(payment.remainingBalance)}
+                          {formatCurrency(payment.runningBalance ?? payment.remainingBalance)}
                         </TableCell>
                         <TableCell>
                           <PaymentTypeBadge
-                            type={getPaymentType(payment.remainingBalance)}
+                            type={getPaymentType(payment.runningBalance ?? payment.remainingBalance)}
                           />
                         </TableCell>
                       </TableRow>

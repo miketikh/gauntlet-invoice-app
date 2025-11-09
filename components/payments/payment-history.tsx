@@ -143,7 +143,7 @@ export function PaymentHistory({ invoiceId, invoice }: PaymentHistoryProps) {
                   </TableCell>
                   <TableCell>
                     <PaymentTypeBadge
-                      type={getPaymentType(payment.remainingBalance)}
+                      type={getPaymentType(payment.runningBalance ?? payment.remainingBalance)}
                     />
                   </TableCell>
                 </TableRow>

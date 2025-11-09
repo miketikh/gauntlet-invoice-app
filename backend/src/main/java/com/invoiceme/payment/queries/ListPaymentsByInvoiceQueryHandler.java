@@ -105,7 +105,18 @@ public class ListPaymentsByInvoiceQueryHandler {
         List<PaymentResponseDTO> result = new ArrayList<>();
         BigDecimal runningBalance = invoice.getTotalAmount();
 
-        for (Payment payment : payments) {
+        // Sort payments by date, then by creation time for deterministic ordering
+        List<Payment> sortedPayments = payments.stream()
+            .sorted((p1, p2) -> {
+                int dateCompare = p1.getPaymentDate().compareTo(p2.getPaymentDate());
+                if (dateCompare != 0) {
+                    return dateCompare;
+                }
+                return p1.getCreatedAt().compareTo(p2.getCreatedAt());
+            })
+            .toList();
+
+        for (Payment payment : sortedPayments) {
             // Subtract payment amount from running balance
             runningBalance = runningBalance.subtract(payment.getAmount());
 
