@@ -120,3 +120,57 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for invoices */
+@media print {
+  /* Hide UI elements when printing */
+  .print\:hidden,
+  nav,
+  header,
+  footer,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Optimize for printing */
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Ensure proper page breaks */
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Remove shadows and borders for cleaner print */
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  /* Full width for print */
+  .container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+  }
+
+  /* Black text for better readability */
+  * {
+    color: black !important;
+  }
+
+  /* Keep table borders visible */
+  table {
+    border-collapse: collapse;
+  }
+
+  table td,
+  table th {
+    border: 1px solid #ddd !important;
+  }
+}

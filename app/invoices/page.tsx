@@ -1,22 +1,28 @@
 "use client";
 
-export default function InvoicesPage() {
-  return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-4">
-          Invoices
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400">
-          Manage your invoices here. This is a protected route.
-        </p>
-      </div>
+/**
+ * Invoices List Page
+ * Displays all invoices with filtering, pagination, and sorting
+ */
 
-      <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          Invoice management functionality coming soon in future phases.
-        </p>
+import { InvoiceList } from "@/components/invoices/invoice-list";
+import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
+
+export default function InvoicesPage() {
+  const { isLoading } = useRequireAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 dark:border-slate-100 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">
+            Loading invoices...
+          </p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <InvoiceList />;
 }

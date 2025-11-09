@@ -11,6 +11,10 @@ import type {
   InvoiceListItemDTO,
   InvoiceFormData,
   LineItemDTO,
+  PagedInvoiceResponse,
+  InvoiceListFilters,
+  InvoicePagination,
+  InvoiceSorting,
 } from './types';
 
 const INVOICES_BASE_URL = '/api/invoices';
@@ -93,12 +97,52 @@ export async function getInvoiceById(
 }
 
 /**
- * Get list of invoices
+ * Get list of invoices with filtering, pagination, and sorting
  */
-export async function getInvoices(): Promise<InvoiceListItemDTO[]> {
-  const response = await apiClient.get<InvoiceListItemDTO[]>(
-    INVOICES_BASE_URL
-  );
+export async function getInvoices(
+  filters?: InvoiceListFilters,
+  pagination?: Partial<InvoicePagination>,
+  sorting?: InvoiceSorting
+): Promise<PagedInvoiceResponse> {
+  const params = new URLSearchParams();
+
+  // Add filter params
+  if (filters?.customerId) {
+    params.append('customerId', filters.customerId);
+  }
+  if (filters?.status) {
+    params.append('status', filters.status);
+  }
+  if (filters?.startDate) {
+    params.append('startDate', filters.startDate);
+  }
+  if (filters?.endDate) {
+    params.append('endDate', filters.endDate);
+  }
+  if (filters?.search) {
+    params.append('search', filters.search);
+  }
+
+  // Add pagination params
+  if (pagination?.page !== undefined) {
+    params.append('page', pagination.page.toString());
+  }
+  if (pagination?.size !== undefined) {
+    params.append('size', pagination.size.toString());
+  }
+
+  // Add sorting params
+  if (sorting?.sortBy) {
+    params.append('sortBy', sorting.sortBy);
+  }
+  if (sorting?.sortDirection) {
+    params.append('sortDirection', sorting.sortDirection);
+  }
+
+  const queryString = params.toString();
+  const url = queryString ? `${INVOICES_BASE_URL}?${queryString}` : INVOICES_BASE_URL;
+
+  const response = await apiClient.get<PagedInvoiceResponse>(url);
   return response.data;
 }
 
@@ -108,6 +152,49 @@ export async function getInvoices(): Promise<InvoiceListItemDTO[]> {
 export async function sendInvoice(id: string): Promise<InvoiceResponseDTO> {
   const response = await apiClient.post<InvoiceResponseDTO>(
     `${INVOICES_BASE_URL}/${id}/send`
+  );
+  return response.data;
+}
+
+/**
+ * Delete an invoice (only Draft status can be deleted)
+ */
+export async function deleteInvoice(id: string): Promise<void> {
+  await apiClient.delete(`${INVOICES_BASE_URL}/${id}`);
+}
+
+/**
+ * Copy an invoice to create a new draft
+ */
+export async function copyInvoice(sourceInvoiceId: string): Promise<InvoiceResponseDTO> {
+  // Fetch source invoice
+  const sourceInvoice = await getInvoiceById(sourceInvoiceId);
+
+  // Transform to CreateInvoiceDTO
+  const today = new Date();
+  const paymentTermsDays = parseInt(sourceInvoice.paymentTerms.match(/\d+/)?.[0] || '30');
+  const newDueDate = new Date(today);
+  newDueDate.setDate(newDueDate.getDate() + paymentTermsDays);
+
+  const createDTO: CreateInvoiceDTO = {
+    customerId: sourceInvoice.customerId,
+    issueDate: today.toISOString(),
+    dueDate: newDueDate.toISOString(),
+    paymentTerms: sourceInvoice.paymentTerms,
+    lineItems: sourceInvoice.lineItems.map((item): LineItemDTO => ({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      discountPercent: item.discountPercent,
+      taxRate: item.taxRate,
+    })),
+    notes: sourceInvoice.notes,
+  };
+
+  // Create new invoice
+  const response = await apiClient.post<InvoiceResponseDTO>(
+    INVOICES_BASE_URL,
+    createDTO
   );
   return response.data;
 }

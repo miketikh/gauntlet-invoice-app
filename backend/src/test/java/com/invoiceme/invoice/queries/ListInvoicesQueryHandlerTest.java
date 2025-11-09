@@ -196,6 +196,16 @@ class ListInvoicesQueryHandlerTest {
         assertThat(result.content().get(0).status()).isEqualTo(InvoiceStatus.Sent);
     }
 
+    @Test
+    void shouldThrowExceptionWhenPageSizeExceedsLimit() {
+        // Arrange & Act & Assert
+        assertThat(org.assertj.core.api.Assertions.catchThrowable(() ->
+            new ListInvoicesQuery(null, null, null, null, 0, 101, "issueDate", "DESC")
+        ))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Page size cannot exceed 100");
+    }
+
     private Invoice createTestInvoice(String invoiceNumber, InvoiceStatus status) {
         Invoice invoice = Invoice.create(
             customerId,

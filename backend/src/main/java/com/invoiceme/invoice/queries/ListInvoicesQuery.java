@@ -20,7 +20,7 @@ public record ListInvoicesQuery(
     String sortDirection
 ) {
     /**
-     * Compact constructor with defaults
+     * Compact constructor with defaults and validation
      */
     public ListInvoicesQuery {
         if (page < 0) {
@@ -28,6 +28,9 @@ public record ListInvoicesQuery(
         }
         if (size <= 0) {
             size = 20;
+        }
+        if (size > 100) {
+            throw new IllegalArgumentException("Page size cannot exceed 100");
         }
         if (sortBy == null || sortBy.isBlank()) {
             sortBy = "issueDate";

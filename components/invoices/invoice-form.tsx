@@ -44,7 +44,7 @@ import {
   calculateInvoiceTotals,
   formatCurrency,
 } from '@/lib/utils/invoice-calculations';
-import type { InvoiceResponseDTO, Customer } from '@/lib/api/types';
+import type { InvoiceResponseDTO, CustomerListItemDTO } from '@/lib/api/types';
 
 interface InvoiceFormProps {
   mode: 'create' | 'edit';
@@ -58,7 +58,7 @@ export function InvoiceForm({
   onSuccess,
 }: InvoiceFormProps) {
   const router = useRouter();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<CustomerListItemDTO[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDraftRestore, setShowDraftRestore] = useState(false);

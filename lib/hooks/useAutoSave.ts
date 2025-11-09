@@ -46,7 +46,7 @@ export function useAutoSave<T>({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const dataRef = useRef<T>(data);
 
   // Update ref when data changes

@@ -29,11 +29,17 @@ import { useAuthStore } from '../stores/auth-store';
 export function useRequireAuth(redirectTo?: string) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, checkTokenExpiry, refreshAuth } = useAuthStore();
+  const { isAuthenticated, checkTokenExpiry, refreshAuth, hasHydrated } = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // CRITICAL: Wait for Zustand to rehydrate from localStorage before checking auth
+        if (!hasHydrated) {
+          // Store hasn't loaded from localStorage yet, keep loading
+          return;
+        }
+
         // Check if user is authenticated
         if (!isAuthenticated) {
           // Not authenticated - redirect to login
@@ -68,7 +74,7 @@ export function useRequireAuth(redirectTo?: string) {
     };
 
     checkAuth();
-  }, [isAuthenticated, checkTokenExpiry, refreshAuth, router, redirectTo]);
+  }, [isAuthenticated, checkTokenExpiry, refreshAuth, router, redirectTo, hasHydrated]);
 
   return {
     isLoading,

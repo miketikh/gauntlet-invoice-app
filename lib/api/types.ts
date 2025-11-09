@@ -224,3 +224,38 @@ export interface CalculatedLineItem extends LineItemFormData {
   taxAmount: number;
   total: number;
 }
+
+// Invoice List Filters
+export interface InvoiceListFilters {
+  customerId?: string;
+  status?: InvoiceStatus;
+  startDate?: string; // ISO date string
+  endDate?: string; // ISO date string
+  search?: string; // Search by invoice number or customer name
+}
+
+// Invoice Pagination
+export interface InvoicePagination {
+  page: number; // 0-indexed
+  size: number; // Items per page
+  totalElements: number; // Total invoices matching filters
+  totalPages: number; // Total pages
+}
+
+// Invoice Sorting
+export interface InvoiceSorting {
+  sortBy: string; // Column name: 'invoiceNumber', 'issueDate', 'dueDate', 'totalAmount', 'status'
+  sortDirection: 'ASC' | 'DESC';
+}
+
+// Paginated Invoice Response
+export interface PagedInvoiceResponse {
+  content: InvoiceListItemDTO[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+// Bulk Action Types
+export type BulkActionType = 'send' | 'export' | 'delete';

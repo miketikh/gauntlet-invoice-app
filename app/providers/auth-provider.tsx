@@ -10,11 +10,16 @@ import { useAuthStore } from "@/lib/stores/auth-store";
  * It should wrap the entire application in the root layout.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { checkTokenExpiry, refreshAuth, isAuthenticated } = useAuthStore();
+  const { checkTokenExpiry, refreshAuth, isAuthenticated, hasHydrated } = useAuthStore();
 
   useEffect(() => {
     // Check if we have stored auth and if token needs refresh on mount
     const initAuth = async () => {
+      // Wait for hydration to complete before checking auth
+      if (!hasHydrated) {
+        return;
+      }
+
       if (isAuthenticated) {
         const isTokenValid = checkTokenExpiry();
 
@@ -46,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Cleanup interval on unmount
     return () => clearInterval(interval);
-  }, [isAuthenticated, checkTokenExpiry, refreshAuth]);
+  }, [isAuthenticated, checkTokenExpiry, refreshAuth, hasHydrated]);
 
   return <>{children}</>;
 }

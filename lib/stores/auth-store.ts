@@ -10,6 +10,10 @@ import type { User, AuthState } from '../api/types';
 
 // Extended auth state with actions
 interface AuthStore extends AuthState {
+  // Hydration state
+  hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+
   // Actions
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -45,6 +49,14 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       // Initial state
       ...initialState,
+      hasHydrated: false,
+
+      /**
+       * Set hydration state
+       */
+      setHasHydrated: (state: boolean) => {
+        set({ hasHydrated: state });
+      },
 
       /**
        * Login action
@@ -168,6 +180,10 @@ export const useAuthStore = create<AuthStore>()(
         tokenExpiresAt: state.tokenExpiresAt,
         isAuthenticated: state.isAuthenticated,
       }),
+      // Set hydration flag when rehydration completes
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
@@ -206,7 +222,8 @@ export const useAutoRefresh = () => {
 export const useAuth = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
-  return { isAuthenticated, user };
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  return { isAuthenticated, user, hasHydrated };
 };
 
 export const useAuthActions = () => {

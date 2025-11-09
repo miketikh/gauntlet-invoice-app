@@ -29,12 +29,10 @@ export const invoiceFormSchema = z
   .object({
     customerId: z.string().min(1, 'Customer is required'),
     issueDate: z.date({
-      required_error: 'Issue date is required',
-      invalid_type_error: 'Issue date must be a valid date',
+      message: 'Issue date must be a valid date',
     }),
     dueDate: z.date({
-      required_error: 'Due date is required',
-      invalid_type_error: 'Due date must be a valid date',
+      message: 'Due date must be a valid date',
     }),
     paymentTerms: z.string().min(1, 'Payment terms are required'),
     lineItems: z
