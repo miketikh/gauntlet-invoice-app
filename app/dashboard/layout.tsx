@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth, useAuthActions } from "@/lib/stores/auth-store";
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
 import { Button } from "@/components/ui/button";
@@ -21,10 +21,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { logout } = useAuthActions();
   const { isLoading } = useRequireAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Helper function to check if path is active
+  const isActive = (path: string) => {
+    if (path === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname.startsWith(path);
+  };
 
   // Handle logout
   const handleLogout = () => {
@@ -73,25 +82,41 @@ export default function DashboardLayout({
             <nav className="hidden md:flex items-center gap-6">
               <button
                 onClick={() => router.push("/dashboard")}
-                className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50 transition-colors font-medium"
+                className={`transition-colors font-medium ${
+                  isActive("/dashboard")
+                    ? "text-slate-900 dark:text-slate-50 border-b-2 border-slate-900 dark:border-slate-50 pb-1"
+                    : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50"
+                }`}
               >
                 Dashboard
               </button>
               <button
                 onClick={() => router.push("/invoices")}
-                className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50 transition-colors font-medium"
+                className={`transition-colors font-medium ${
+                  isActive("/invoices")
+                    ? "text-slate-900 dark:text-slate-50 border-b-2 border-slate-900 dark:border-slate-50 pb-1"
+                    : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50"
+                }`}
               >
                 Invoices
               </button>
               <button
                 onClick={() => router.push("/customers")}
-                className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50 transition-colors font-medium"
+                className={`transition-colors font-medium ${
+                  isActive("/customers")
+                    ? "text-slate-900 dark:text-slate-50 border-b-2 border-slate-900 dark:border-slate-50 pb-1"
+                    : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50"
+                }`}
               >
                 Customers
               </button>
               <button
                 onClick={() => router.push("/settings")}
-                className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50 transition-colors font-medium"
+                className={`transition-colors font-medium ${
+                  isActive("/settings")
+                    ? "text-slate-900 dark:text-slate-50 border-b-2 border-slate-900 dark:border-slate-50 pb-1"
+                    : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50"
+                }`}
               >
                 Settings
               </button>
@@ -158,7 +183,11 @@ export default function DashboardLayout({
                     router.push("/dashboard");
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors font-medium"
+                  className={`text-left px-4 py-2 rounded-md transition-colors font-medium ${
+                    isActive("/dashboard")
+                      ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
                 >
                   Dashboard
                 </button>
@@ -167,7 +196,11 @@ export default function DashboardLayout({
                     router.push("/invoices");
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors font-medium"
+                  className={`text-left px-4 py-2 rounded-md transition-colors font-medium ${
+                    isActive("/invoices")
+                      ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
                 >
                   Invoices
                 </button>
@@ -176,7 +209,11 @@ export default function DashboardLayout({
                     router.push("/customers");
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors font-medium"
+                  className={`text-left px-4 py-2 rounded-md transition-colors font-medium ${
+                    isActive("/customers")
+                      ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
                 >
                   Customers
                 </button>
@@ -185,7 +222,11 @@ export default function DashboardLayout({
                     router.push("/settings");
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors font-medium"
+                  className={`text-left px-4 py-2 rounded-md transition-colors font-medium ${
+                    isActive("/settings")
+                      ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
                 >
                   Settings
                 </button>

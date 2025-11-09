@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
  * Handles login and token refresh endpoints
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {

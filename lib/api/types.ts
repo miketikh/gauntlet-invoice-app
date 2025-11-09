@@ -45,3 +45,67 @@ export interface AuthState {
   isAuthenticated: boolean;
   tokenExpiresAt: number | null; // timestamp when token expires
 }
+
+// Customer domain models
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: Address;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted: boolean;
+}
+
+// Customer DTOs for API operations
+export interface CreateCustomerDTO {
+  name: string;
+  email: string;
+  phone?: string;
+  address?: Address;
+}
+
+export interface UpdateCustomerDTO {
+  name: string;
+  email: string;
+  phone?: string;
+  address?: Address;
+}
+
+// Response DTO with computed fields
+export interface CustomerResponseDTO extends Customer {
+  totalInvoices?: number;
+  outstandingBalance?: number;
+}
+
+// List item DTO (lighter than full response)
+export interface CustomerListItemDTO {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: string;
+  totalInvoices?: number;
+  outstandingBalance?: number;
+}
+
+// Paginated response from backend
+export interface PagedCustomerResponse {
+  content: CustomerListItemDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+}

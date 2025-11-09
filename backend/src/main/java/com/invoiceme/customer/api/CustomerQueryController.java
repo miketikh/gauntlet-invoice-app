@@ -25,7 +25,7 @@ import java.util.UUID;
  * Handles GET requests for retrieving customer data
  */
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping("/customers")
 @Tag(name = "Customer Queries", description = "Customer read operations (CQRS Query side)")
 @SecurityRequirement(name = "bearerAuth")
 public class CustomerQueryController {

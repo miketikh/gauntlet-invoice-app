@@ -15,7 +15,7 @@ import java.util.UUID;
  * Handles create, update, and delete operations
  */
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping("/customers")
 @RequiredArgsConstructor
 public class CustomerCommandController {
 
