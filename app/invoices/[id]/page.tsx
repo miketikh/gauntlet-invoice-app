@@ -54,6 +54,11 @@ export default function InvoiceDetailPage() {
     router.push(`/invoices/${newInvoice.id}/edit`);
   };
 
+  const handlePaymentRecorded = async () => {
+    // Refetch invoice to show updated balance and status
+    await fetchInvoice(id);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-6">
@@ -98,6 +103,7 @@ export default function InvoiceDetailPage() {
         onSend={handleSend}
         onDelete={handleDelete}
         onCopy={handleCopy}
+        onPaymentRecorded={handlePaymentRecorded}
       />
     </div>
   );

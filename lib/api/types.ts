@@ -259,3 +259,33 @@ export interface PagedInvoiceResponse {
 
 // Bulk Action Types
 export type BulkActionType = 'send' | 'export' | 'delete';
+
+// Payment domain models
+export type PaymentMethod = 'CREDIT_CARD' | 'BANK_TRANSFER' | 'CHECK' | 'CASH';
+
+export interface RecordPaymentDTO {
+  paymentDate: string; // ISO date string for API
+  amount: number;
+  paymentMethod: PaymentMethod;
+  reference: string;
+  notes?: string;
+}
+
+export interface PaymentResponseDTO {
+  id: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  customerName: string;
+  customerEmail: string;
+  paymentDate: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  reference: string;
+  notes?: string;
+  invoiceTotal: number;
+  remainingBalance: number;
+  runningBalance?: number; // Only in payment history queries
+  invoiceStatus: InvoiceStatus;
+  createdAt: string;
+  createdBy: string;
+}

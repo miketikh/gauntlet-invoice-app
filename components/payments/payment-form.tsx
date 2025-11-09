@@ -1,0 +1,357 @@
+"use client";
+
+/**
+ * PaymentForm Component
+ * Modal dialog form for recording payments against invoices
+ */
+
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { toast } from "sonner";
+import { Loader2, DollarSign } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/invoices/date-picker";
+import { formatCurrency } from "@/lib/utils";
+import { recordPayment } from "@/lib/api/payments";
+import type { InvoiceResponseDTO, PaymentMethod } from "@/lib/api/types";
+
+interface PaymentFormProps {
+  invoice: InvoiceResponseDTO;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+// Payment method options
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "CREDIT_CARD", label: "Credit Card" },
+  { value: "BANK_TRANSFER", label: "Bank Transfer" },
+  { value: "CHECK", label: "Check" },
+  { value: "CASH", label: "Cash" },
+];
+
+// Validation schema with Zod
+const paymentFormSchema = z.object({
+  paymentDate: z.date().refine((date) => date <= new Date(), {
+    message: "Payment date cannot be in the future",
+  }),
+  amount: z.number().min(0.01, "Amount must be at least $0.01"),
+  paymentMethod: z.enum(["CREDIT_CARD", "BANK_TRANSFER", "CHECK", "CASH"]),
+  reference: z.string().min(1, "Reference number is required"),
+  notes: z.string().optional(),
+});
+
+type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+
+export function PaymentForm({
+  invoice,
+  open,
+  onOpenChange,
+  onSuccess,
+}: PaymentFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [remainingBalance, setRemainingBalance] = useState(invoice.balance);
+
+  const form = useForm<PaymentFormValues>({
+    resolver: zodResolver(paymentFormSchema),
+    defaultValues: {
+      paymentDate: new Date(),
+      amount: 0,
+      paymentMethod: "CREDIT_CARD",
+      reference: "",
+      notes: "",
+    },
+  });
+
+  // Custom validation for amount not exceeding balance
+  const validateAmount = (amount: number): boolean => {
+    if (amount > invoice.balance) {
+      form.setError("amount", {
+        type: "manual",
+        message: `Amount cannot exceed balance due (${formatCurrency(invoice.balance)})`,
+      });
+      return false;
+    }
+    form.clearErrors("amount");
+    return true;
+  };
+
+  // Watch amount field for real-time balance calculation
+  const watchAmount = form.watch("amount");
+
+  useEffect(() => {
+    const amount = watchAmount || 0;
+    const remaining = invoice.balance - amount;
+    setRemainingBalance(remaining);
+
+    // Validate amount on change
+    if (amount > 0) {
+      validateAmount(amount);
+    }
+  }, [watchAmount, invoice.balance]);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      form.reset({
+        paymentDate: new Date(),
+        amount: 0,
+        paymentMethod: "CreditCard",
+        reference: "",
+        notes: "",
+      });
+      setRemainingBalance(invoice.balance);
+    }
+  }, [open, form, invoice.balance]);
+
+  const onSubmit = async (values: PaymentFormValues) => {
+    // Final validation
+    if (!validateAmount(values.amount)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await recordPayment(invoice.id, {
+        paymentDate: values.paymentDate.toISOString().split("T")[0],
+        amount: values.amount,
+        paymentMethod: values.paymentMethod,
+        reference: values.reference,
+        notes: values.notes || undefined,
+      });
+
+      // Show success toast
+      toast.success(`Payment of ${formatCurrency(values.amount)} recorded successfully`);
+
+      // Check if invoice is now fully paid
+      if (response.remainingBalance === 0) {
+        toast.success(`Invoice #${invoice.invoiceNumber} is now fully paid`);
+      }
+
+      // Call success callback and close dialog
+      onSuccess();
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to record payment");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Record Payment</DialogTitle>
+          <DialogDescription>
+            Record a payment for this invoice. The invoice balance will be updated
+            automatically.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Invoice Context Display */}
+        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Invoice Number:</span>
+              <div className="font-semibold">{invoice.invoiceNumber}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Customer:</span>
+              <div className="font-semibold">{invoice.customerName}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Invoice Total:</span>
+              <div className="font-semibold">{formatCurrency(invoice.totalAmount)}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Current Balance:</span>
+              <div className="font-semibold text-orange-600 dark:text-orange-400">
+                {formatCurrency(invoice.balance)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Payment Date */}
+            <FormField
+              control={form.control}
+              name="paymentDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Date</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      date={field.value}
+                      onDateChange={field.onChange}
+                      placeholder="Select payment date"
+                      toDate={new Date()}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Amount */}
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="pl-9 text-lg font-semibold"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          field.onChange(value);
+                        }}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+
+                  {/* Remaining Balance Display */}
+                  {watchAmount > 0 && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Remaining Balance: </span>
+                      <span
+                        className={
+                          remainingBalance >= 0
+                            ? "font-semibold text-green-600 dark:text-green-400"
+                            : "font-semibold text-red-600 dark:text-red-400"
+                        }
+                      >
+                        {formatCurrency(remainingBalance)}
+                      </span>
+                      {remainingBalance < 0 && (
+                        <div className="text-red-600 dark:text-red-400 font-medium mt-1">
+                          Amount exceeds balance!
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </FormItem>
+              )}
+            />
+
+            {/* Payment Method */}
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((method) => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Reference Number */}
+            <FormField
+              control={form.control}
+              name="reference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reference Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Transaction ID, check number, etc."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Notes (Optional) */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Add any additional notes about this payment..."
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {loading ? "Recording..." : "Record Payment"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

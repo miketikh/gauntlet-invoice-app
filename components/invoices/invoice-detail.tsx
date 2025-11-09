@@ -20,6 +20,12 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Edit,
   Send,
   Copy,
@@ -27,10 +33,12 @@ import {
   Printer,
   Download,
   ArrowLeft,
+  DollarSign,
 } from "lucide-react";
 import type { InvoiceResponseDTO, InvoiceStatus } from "@/lib/api/types";
 import { SendConfirmationDialog } from "./send-confirmation-dialog";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+import { PaymentForm } from "@/components/payments/payment-form";
 import { toast } from "sonner";
 
 interface InvoiceDetailProps {
@@ -38,6 +46,7 @@ interface InvoiceDetailProps {
   onSend?: () => Promise<void>;
   onDelete?: () => Promise<void>;
   onCopy?: () => Promise<void>;
+  onPaymentRecorded?: () => Promise<void>;
 }
 
 function StatusBadge({ status }: { status: InvoiceStatus }) {
@@ -59,10 +68,12 @@ export function InvoiceDetail({
   onSend,
   onDelete,
   onCopy,
+  onPaymentRecorded,
 }: InvoiceDetailProps) {
   const router = useRouter();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const formatCurrency = (amount: number) => {
@@ -132,6 +143,22 @@ export function InvoiceDetail({
   const isPaid = invoice.status === "Paid";
   const isOverdue = invoice.daysOverdue && invoice.daysOverdue > 0;
 
+  // Determine if payment button should be disabled
+  const canRecordPayment = isSent && invoice.balance > 0;
+
+  // Get tooltip message for disabled payment button
+  const getPaymentButtonTooltip = () => {
+    if (isDraft) return "Cannot record payment for draft invoices. Send invoice first.";
+    if (isPaid || invoice.balance <= 0) return "This invoice is fully paid.";
+    return "";
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (onPaymentRecorded) {
+      await onPaymentRecorded();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Action Buttons (hidden when printing) */}
@@ -168,6 +195,32 @@ export function InvoiceDetail({
               <Send className="h-4 w-4 mr-2" />
               Send
             </Button>
+          )}
+
+          {/* Record Payment - only for Sent invoices with balance */}
+          {onPaymentRecorded && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setPaymentDialogOpen(true)}
+                      disabled={!canRecordPayment}
+                    >
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Record Payment
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!canRecordPayment && (
+                  <TooltipContent>
+                    <p>{getPaymentButtonTooltip()}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )}
 
           {/* Copy - available for all */}
@@ -380,6 +433,13 @@ export function InvoiceDetail({
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         loading={loading}
+      />
+
+      <PaymentForm
+        invoice={invoice}
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        onSuccess={handlePaymentSuccess}
       />
     </div>
   );

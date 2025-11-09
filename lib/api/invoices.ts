@@ -17,7 +17,7 @@ import type {
   InvoiceSorting,
 } from './types';
 
-const INVOICES_BASE_URL = '/api/invoices';
+const INVOICES_BASE_URL = '/invoices';
 
 /**
  * Convert form data to CreateInvoiceDTO for API

@@ -6,6 +6,7 @@ export { authApi, AuthError, authClient } from './auth';
 export { apiClient, createApiClient } from './client';
 export * from './invoices';
 export * from './customers';
+export * from './payments';
 export type {
   LoginRequest,
   LoginResponse,
@@ -31,4 +32,7 @@ export type {
   InvoiceListItemDTO,
   InvoiceTotals,
   CalculatedLineItem,
+  PaymentMethod,
+  RecordPaymentDTO,
+  PaymentResponseDTO,
 } from './types';
