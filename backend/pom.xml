@@ -23,6 +23,8 @@
         <jwt.version>0.12.3</jwt.version>
         <springdoc.version>2.3.0</springdoc.version>
         <lombok.version>1.18.36</lombok.version>
+        <itext.version>8.0.3</itext.version>
+        <itext.html2pdf.version>5.0.3</itext.html2pdf.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
@@ -120,6 +122,29 @@
             <version>7.4</version>
         </dependency>
 
+        <!-- Thymeleaf for templating -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- iText 7 for PDF generation -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>kernel</artifactId>
+            <version>${itext.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>${itext.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>html2pdf</artifactId>
+            <version>${itext.html2pdf.version}</version>
+        </dependency>
+
         <!-- Development tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -200,7 +225,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.13.0</version>
                 <configuration>
                     <release>21</release>
                     <compilerArgs>

@@ -21,6 +21,13 @@ import java.util.UUID;
 public interface JpaCustomerRepository extends JpaRepository<Customer, UUID>, CustomerRepository {
 
     /**
+     * Saves a customer (create or update)
+     * Explicitly overrides both JpaRepository and CustomerRepository to resolve ambiguity
+     */
+    @Override
+    Customer save(Customer customer);
+
+    /**
      * Finds a customer by ID, excluding soft-deleted customers
      * Overrides default findById to filter out deleted customers
      */

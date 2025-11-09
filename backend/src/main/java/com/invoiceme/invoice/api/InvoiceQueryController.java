@@ -1,5 +1,6 @@
 package com.invoiceme.invoice.api;
 
+import com.invoiceme.common.services.InvoicePdfService;
 import com.invoiceme.invoice.commands.dto.InvoiceResponseDTO;
 import com.invoiceme.invoice.domain.InvoiceStatus;
 import com.invoiceme.invoice.queries.GetInvoiceByIdQuery;
@@ -13,14 +14,24 @@ import com.invoiceme.payment.queries.ListPaymentsByInvoiceQueryHandler;
 import com.invoiceme.payment.queries.PaymentResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -35,18 +46,23 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearer-jwt")
 public class InvoiceQueryController {
 
+    private static final Logger logger = LoggerFactory.getLogger(InvoiceQueryController.class);
+
     private final GetInvoiceByIdQueryHandler getInvoiceByIdQueryHandler;
     private final ListInvoicesQueryHandler listInvoicesQueryHandler;
     private final ListPaymentsByInvoiceQueryHandler listPaymentsByInvoiceQueryHandler;
+    private final InvoicePdfService invoicePdfService;
 
     public InvoiceQueryController(
         GetInvoiceByIdQueryHandler getInvoiceByIdQueryHandler,
         ListInvoicesQueryHandler listInvoicesQueryHandler,
-        ListPaymentsByInvoiceQueryHandler listPaymentsByInvoiceQueryHandler
+        ListPaymentsByInvoiceQueryHandler listPaymentsByInvoiceQueryHandler,
+        InvoicePdfService invoicePdfService
     ) {
         this.getInvoiceByIdQueryHandler = getInvoiceByIdQueryHandler;
         this.listInvoicesQueryHandler = listInvoicesQueryHandler;
         this.listPaymentsByInvoiceQueryHandler = listPaymentsByInvoiceQueryHandler;
+        this.invoicePdfService = invoicePdfService;
     }
 
     /**
@@ -132,5 +148,63 @@ public class InvoiceQueryController {
         ListPaymentsByInvoiceQuery query = new ListPaymentsByInvoiceQuery(id);
         List<PaymentResponseDTO> response = listPaymentsByInvoiceQueryHandler.handle(query);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Download invoice as PDF
+     * Streams PDF directly to response for efficient memory usage
+     */
+    @GetMapping("/{id}/pdf")
+    @Operation(
+        summary = "Download invoice as PDF",
+        description = "Generates and downloads a professional PDF document for the specified invoice"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "PDF generated and downloaded successfully",
+            content = @Content(
+                mediaType = "application/pdf",
+                schema = @Schema(type = "string", format = "binary")
+            )
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid invoice ID format"),
+        @ApiResponse(responseCode = "404", description = "Invoice not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid or missing authentication"),
+        @ApiResponse(responseCode = "500", description = "PDF generation failed")
+    })
+    public void downloadInvoicePdf(
+        @Parameter(description = "Invoice ID") @PathVariable UUID id,
+        HttpServletResponse response
+    ) throws IOException {
+        logger.info("PDF download requested for invoice ID: {}", id);
+
+        try {
+            // Retrieve invoice using existing query handler
+            GetInvoiceByIdQuery query = new GetInvoiceByIdQuery(id);
+            InvoiceResponseDTO invoice = getInvoiceByIdQueryHandler.handle(query);
+
+            // Set response headers for PDF download
+            response.setContentType(MediaType.APPLICATION_PDF_VALUE);
+            response.setHeader(
+                HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"Invoice-" + invoice.invoiceNumber() + ".pdf\""
+            );
+            response.setHeader(HttpHeaders.CACHE_CONTROL, CacheControl.noStore().getHeaderValue());
+            response.setHeader("X-Invoice-Number", invoice.invoiceNumber());
+
+            // Stream PDF directly to response output stream
+            try (OutputStream outputStream = response.getOutputStream()) {
+                invoicePdfService.generateInvoicePdf(invoice, outputStream);
+                outputStream.flush();
+            }
+
+            logger.info("PDF successfully generated and streamed for invoice: {} (ID: {})",
+                invoice.invoiceNumber(), id);
+
+        } catch (Exception e) {
+            logger.error("Failed to generate PDF for invoice ID: {}", id, e);
+            throw e; // Let GlobalExceptionHandler handle it
+        }
     }
 }

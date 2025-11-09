@@ -198,3 +198,36 @@ export async function copyInvoice(sourceInvoiceId: string): Promise<InvoiceRespo
   );
   return response.data;
 }
+
+/**
+ * Download invoice as PDF
+ * @param id Invoice ID
+ * @param invoiceNumber Invoice number for the filename
+ * @returns Promise that resolves when download completes
+ */
+export async function downloadInvoicePdf(
+  id: string,
+  invoiceNumber: string
+): Promise<void> {
+  const response = await apiClient.get(`${INVOICES_BASE_URL}/${id}/pdf`, {
+    responseType: 'blob',
+    timeout: 30000, // 30 second timeout for PDF generation
+  });
+
+  // Create blob from response
+  const blob = new Blob([response.data], { type: 'application/pdf' });
+
+  // Create temporary download link
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Invoice-${invoiceNumber}.pdf`;
+
+  // Trigger download
+  document.body.appendChild(link);
+  link.click();
+
+  // Cleanup
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}

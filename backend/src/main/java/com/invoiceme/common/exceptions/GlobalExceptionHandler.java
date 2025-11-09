@@ -455,6 +455,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles PDF generation exceptions.
+     */
+    @ExceptionHandler(PdfGenerationException.class)
+    public ResponseEntity<ApiErrorResponse> handlePdfGenerationException(
+            PdfGenerationException ex,
+            HttpServletRequest request) {
+
+        String correlationId = CorrelationIdFilter.getCurrentCorrelationId();
+        ApiErrorResponse errorResponse = ApiErrorResponse.of(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Unable to generate PDF. Please try again later.",
+                request.getRequestURI(),
+                correlationId
+        );
+
+        logger.error("PDF generation failed: {} - CorrelationId: {}", ex.getMessage(), correlationId, ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
      * Handles all other exceptions as internal server errors.
      *
      * NOTE: Commented out to allow Spring Security's default exception handling to work.

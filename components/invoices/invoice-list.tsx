@@ -60,6 +60,12 @@ import {
 import type { InvoiceListItemDTO, InvoiceStatus, BulkActionType, CustomerListItemDTO } from "@/lib/api/types";
 import { customerApi } from "@/lib/api";
 import { BulkActionsMenu } from "./bulk-actions-menu";
+import { BulkPdfExportConfirmationModal } from "./bulk-pdf-export-confirmation-modal";
+import { BulkPdfExportProgressModal } from "./bulk-pdf-export-progress-modal";
+import { BulkPdfExportResultsModal } from "./bulk-pdf-export-results-modal";
+import type { FailedInvoice } from "./bulk-pdf-export-results-modal";
+import { useBulkPdfExport } from "@/lib/hooks/useBulkPdfExport";
+import type { BulkExportProgress, BulkExportResult } from "@/lib/hooks/useBulkPdfExport";
 import { toast } from "sonner";
 
 interface StatusBadgeProps {
@@ -108,6 +114,24 @@ export function InvoiceList() {
   const [customers, setCustomers] = useState<CustomerListItemDTO[]>([]);
   const [localSearch, setLocalSearch] = useState(filters.search || "");
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Bulk PDF Export state
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [exportProgress, setExportProgress] = useState<BulkExportProgress>({
+    current: 0,
+    total: 0,
+    currentInvoiceNumber: '',
+  });
+  const [exportResults, setExportResults] = useState<BulkExportResult | null>(null);
+  const [invoicesToExport, setInvoicesToExport] = useState<InvoiceListItemDTO[]>([]);
+
+  const { exportPdfs, isExporting } = useBulkPdfExport({
+    onProgress: (progress) => {
+      setExportProgress(progress);
+    },
+  });
 
   // Load URL params on mount
   useEffect(() => {
@@ -259,8 +283,114 @@ export function InvoiceList() {
   const someSelected = selectedInvoiceIds.length > 0 && !allSelected;
 
   const handleBulkAction = (action: BulkActionType) => {
-    // Placeholder for future bulk actions
-    toast.info(`Bulk ${action} action coming soon!`);
+    if (action === 'export') {
+      handleBulkPdfExport();
+    } else {
+      toast.info(`Bulk ${action} action coming soon!`);
+    }
+  };
+
+  const handleBulkPdfExport = () => {
+    // Get selected invoices
+    const selected = invoices.filter(inv => selectedInvoiceIds.includes(inv.id));
+
+    if (selected.length === 0) {
+      toast.error('No invoices selected');
+      return;
+    }
+
+    // Maximum batch size check
+    const MAX_BATCH_SIZE = 50;
+    if (selected.length > MAX_BATCH_SIZE) {
+      toast.error(`Maximum ${MAX_BATCH_SIZE} invoices can be exported at once`);
+      return;
+    }
+
+    // Warning for large batches
+    if (selected.length > 20) {
+      toast.warning(`Exporting ${selected.length} invoices may take a while`);
+    }
+
+    setInvoicesToExport(selected);
+    setShowConfirmationModal(true);
+  };
+
+  const handleConfirmExport = async () => {
+    setShowConfirmationModal(false);
+    setShowProgressModal(true);
+
+    try {
+      const results = await exportPdfs(invoicesToExport);
+      setExportResults(results);
+
+      // Show appropriate toast
+      if (results.failed.length === 0) {
+        toast.success(`All ${results.successful.length} PDFs downloaded successfully`);
+      } else if (results.successful.length === 0) {
+        toast.error('All PDF downloads failed');
+      } else {
+        toast.warning(
+          `${results.successful.length} of ${results.total} PDFs downloaded. ${results.failed.length} failed.`
+        );
+      }
+    } catch (error) {
+      console.error('Bulk PDF export failed:', error);
+      toast.error('Bulk PDF export failed. Please try again.');
+    } finally {
+      setShowProgressModal(false);
+      setShowResultsModal(true);
+    }
+  };
+
+  const handleCancelExport = () => {
+    setShowConfirmationModal(false);
+    setInvoicesToExport([]);
+  };
+
+  const handleCloseResults = () => {
+    setShowResultsModal(false);
+    setExportResults(null);
+    setInvoicesToExport([]);
+    // Clear selection after export completes
+    deselectAllInvoices();
+  };
+
+  const handleRetryFailed = async () => {
+    if (!exportResults) return;
+
+    // Get failed invoice IDs and find their data
+    const failedIds = exportResults.failed.map(f => f.invoiceId);
+    const failedInvoices = invoicesToExport.filter(inv => failedIds.includes(inv.id));
+
+    setShowResultsModal(false);
+    setShowProgressModal(true);
+
+    try {
+      const results = await exportPdfs(failedInvoices);
+
+      // Merge with previous results
+      const updatedResults: BulkExportResult = {
+        total: exportResults.total,
+        successful: [...exportResults.successful, ...results.successful],
+        failed: results.failed,
+      };
+
+      setExportResults(updatedResults);
+
+      if (results.failed.length === 0) {
+        toast.success(`All ${results.successful.length} failed PDFs downloaded successfully`);
+      } else {
+        toast.warning(
+          `${results.successful.length} of ${failedInvoices.length} PDFs downloaded. ${results.failed.length} still failed.`
+        );
+      }
+    } catch (error) {
+      console.error('Retry failed:', error);
+      toast.error('Retry failed. Please try again.');
+    } finally {
+      setShowProgressModal(false);
+      setShowResultsModal(true);
+    }
   };
 
   const renderSortIcon = (field: string) => {
@@ -676,6 +806,31 @@ export function InvoiceList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk PDF Export Modals */}
+      <BulkPdfExportConfirmationModal
+        open={showConfirmationModal}
+        invoiceCount={invoicesToExport.length}
+        invoiceNumbers={invoicesToExport.map(inv => inv.invoiceNumber)}
+        onConfirm={handleConfirmExport}
+        onCancel={handleCancelExport}
+      />
+
+      <BulkPdfExportProgressModal
+        open={showProgressModal}
+        current={exportProgress.current}
+        total={exportProgress.total}
+        currentInvoiceNumber={exportProgress.currentInvoiceNumber}
+      />
+
+      <BulkPdfExportResultsModal
+        open={showResultsModal}
+        totalAttempted={exportResults?.total || 0}
+        successCount={exportResults?.successful.length || 0}
+        failedInvoices={exportResults?.failed || []}
+        onClose={handleCloseResults}
+        onRetryFailed={handleRetryFailed}
+      />
     </div>
   );
 }

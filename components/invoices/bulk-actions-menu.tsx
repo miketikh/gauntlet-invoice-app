@@ -2,7 +2,7 @@
 
 /**
  * Bulk Actions Menu Component
- * Displays bulk action options for selected invoices (placeholders for future implementation)
+ * Displays bulk action options for selected invoices
  */
 
 import { Button } from "@/components/ui/button";
@@ -58,14 +58,10 @@ export function BulkActionsMenu({
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              disabled
-              className="cursor-not-allowed opacity-50"
+              onClick={() => onAction('export')}
             >
               <Download className="h-4 w-4 mr-2" />
-              Export Selected
-              <span className="ml-auto text-xs text-muted-foreground">
-                Coming Soon
-              </span>
+              Export PDFs
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

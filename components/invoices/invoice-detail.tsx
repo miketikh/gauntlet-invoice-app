@@ -47,6 +47,7 @@ import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { PaymentHistory } from "@/components/payments/payment-history";
 import { getPaymentsByInvoice } from "@/lib/api/payments";
 import { usePaymentModalStore } from "@/lib/stores/payment-modal-store";
+import { downloadInvoicePdf } from "@/lib/api/invoices";
 import { toast } from "sonner";
 
 interface InvoiceDetailProps {
@@ -83,6 +84,7 @@ export function InvoiceDetail({
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
   const [paymentCount, setPaymentCount] = useState<number>(0);
 
   // Fetch payment count for the badge
@@ -157,8 +159,36 @@ export function InvoiceDetail({
     window.print();
   };
 
-  const handleExportPDF = () => {
-    toast.info("PDF export coming soon!");
+  const handleExportPDF = async () => {
+    setPdfDownloading(true);
+
+    try {
+      await downloadInvoicePdf(invoice.id, invoice.invoiceNumber);
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      console.error("PDF download failed:", error);
+
+      // Determine error message based on error type
+      let errorMessage = "Failed to download PDF. Please try again.";
+
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.status === 404) {
+          errorMessage = "Invoice not found.";
+        } else if (axiosError.response?.status === 500) {
+          errorMessage = "PDF generation failed. Please contact support.";
+        }
+      }
+
+      toast.error(errorMessage, {
+        action: {
+          label: "Retry",
+          onClick: () => handleExportPDF(),
+        },
+      });
+    } finally {
+      setPdfDownloading(false);
+    }
   };
 
   const isDraft = invoice.status === "Draft";
@@ -255,10 +285,16 @@ export function InvoiceDetail({
             Print
           </Button>
 
-          {/* Export PDF - placeholder */}
-          <Button variant="outline" size="sm" onClick={handleExportPDF}>
+          {/* Export PDF */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            disabled={pdfDownloading}
+            aria-label="Download invoice PDF"
+          >
             <Download className="h-4 w-4 mr-2" />
-            Export PDF
+            {pdfDownloading ? "Generating PDF..." : "Export PDF"}
           </Button>
 
           {/* Delete - only for Draft */}
