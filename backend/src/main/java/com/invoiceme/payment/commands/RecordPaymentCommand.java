@@ -7,14 +7,24 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 /**
- * RecordPaymentDTO
- * REST API request DTO for recording a new payment
- * Maps to RecordPaymentCommand in controller
- * Uses Java record for immutability
+ * RecordPaymentCommand
+ * Immutable command for recording a payment against an invoice
+ * Follows CQRS pattern for command handling
+ *
+ * Validation rules:
+ * - Invoice ID is required
+ * - Payment date is required and cannot be in the future
+ * - Amount must be positive
+ * - Payment method is required
+ * - Idempotency key is optional (for preventing duplicate payments)
  */
-public record RecordPaymentDTO(
+public record RecordPaymentCommand(
+    @NotNull(message = "Invoice ID is required")
+    UUID invoiceId,
+
     @NotNull(message = "Payment date is required")
     @PastOrPresent(message = "Payment date cannot be in the future")
     LocalDate paymentDate,
