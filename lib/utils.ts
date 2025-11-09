@@ -16,3 +16,25 @@ export function formatCurrency(amount: number): string {
     currency: 'USD',
   }).format(amount);
 }
+
+/**
+ * Format a date string or Date object as a readable date
+ * @param date - The date to format
+ * @returns Formatted date string (e.g., "Nov 8, 2024")
+ */
+export function formatDate(date: Date | string | null | undefined): string {
+  if (!date) {
+    return '';
+  }
+
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(dateObj);
+  } catch (error) {
+    return '';
+  }
+}

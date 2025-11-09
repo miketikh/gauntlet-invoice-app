@@ -24,12 +24,108 @@ export interface RefreshResponse {
   expiresIn: number;
 }
 
-// Error response from backend
-export interface ApiError {
+// Error response from backend - matches ApiErrorResponse from backend
+export interface ApiErrorResponse {
+  timestamp: string;
+  status: number;
+  error: string;
   message: string;
-  status?: number;
-  timestamp?: string;
-  path?: string;
+  path: string;
+  correlationId: string;
+  fieldErrors?: FieldError[];
+}
+
+export interface FieldError {
+  field: string;
+  message: string;
+  rejectedValue: any;
+}
+
+/**
+ * Custom error class for API errors
+ * Wraps API error responses with helper methods
+ */
+export class ApiError extends Error {
+  public readonly response: ApiErrorResponse;
+  public readonly correlationId: string;
+
+  constructor(response: ApiErrorResponse) {
+    super(response.message);
+    this.name = 'ApiError';
+    this.response = response;
+    this.correlationId = response.correlationId;
+  }
+
+  /**
+   * Check if this is a validation error with field-level details
+   */
+  isValidationError(): boolean {
+    return this.response.status === 400 && !!this.response.fieldErrors && this.response.fieldErrors.length > 0;
+  }
+
+  /**
+   * Check if this is a not found error
+   */
+  isNotFoundError(): boolean {
+    return this.response.status === 404;
+  }
+
+  /**
+   * Check if this is an unauthorized error
+   */
+  isUnauthorizedError(): boolean {
+    return this.response.status === 401;
+  }
+
+  /**
+   * Check if this is a forbidden error
+   */
+  isForbiddenError(): boolean {
+    return this.response.status === 403;
+  }
+
+  /**
+   * Check if this is a conflict error
+   */
+  isConflictError(): boolean {
+    return this.response.status === 409;
+  }
+
+  /**
+   * Check if this is a server error
+   */
+  isServerError(): boolean {
+    return this.response.status >= 500;
+  }
+
+  /**
+   * Check if this error is retryable
+   */
+  isRetryable(): boolean {
+    // Retry on server errors and network errors
+    return this.isServerError();
+  }
+
+  /**
+   * Get field errors as a map
+   */
+  getFieldErrorsMap(): Record<string, string> {
+    if (!this.response.fieldErrors) return {};
+    return this.response.fieldErrors.reduce((acc, error) => {
+      acc[error.field] = error.message;
+      return acc;
+    }, {} as Record<string, string>);
+  }
+
+  /**
+   * Get a user-friendly error message
+   */
+  getUserMessage(): string {
+    if (this.isValidationError()) {
+      return 'Please check your input and try again.';
+    }
+    return this.message;
+  }
 }
 
 // User state
@@ -288,4 +384,36 @@ export interface PaymentResponseDTO {
   invoiceStatus: InvoiceStatus;
   createdAt: string;
   createdBy: string;
+}
+
+// Payment History Filters
+export interface PaymentHistoryFilters {
+  customerId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  paymentMethod?: PaymentMethod[];
+  reference?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+// Generic Page Response
+export interface Page<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+// Payment Statistics
+export interface PaymentStatistics {
+  totalCollected: number;
+  collectedToday: number;
+  collectedThisMonth: number;
+  collectedThisYear: number;
+  totalPaymentCount: number;
+  byMethod: Record<PaymentMethod, number>;
+  byMonth: Record<string, number>;
 }

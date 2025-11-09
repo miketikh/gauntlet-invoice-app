@@ -123,7 +123,7 @@ export function PaymentForm({
       form.reset({
         paymentDate: new Date(),
         amount: 0,
-        paymentMethod: "CreditCard",
+        paymentMethod: "CREDIT_CARD",
         reference: "",
         notes: "",
       });

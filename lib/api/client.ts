@@ -4,7 +4,8 @@
  */
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import type { ApiError } from './types';
+import { ApiError } from './types';
+import { setupErrorInterceptor } from './error-interceptor';
 
 // API base URL
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -20,6 +21,9 @@ export const createApiClient = (): AxiosInstance => {
     },
     timeout: 15000, // 15 second timeout
   });
+
+  // Setup error interceptor first (for retry logic and error conversion)
+  setupErrorInterceptor(client);
 
   // Request interceptor - inject auth token
   client.interceptors.request.use(

@@ -4,7 +4,13 @@
  */
 
 import { apiClient } from './client';
-import type { RecordPaymentDTO, PaymentResponseDTO } from './types';
+import type {
+  RecordPaymentDTO,
+  PaymentResponseDTO,
+  PaymentHistoryFilters,
+  Page,
+  PaymentStatistics
+} from './types';
 
 /**
  * Record a payment against an invoice
@@ -78,5 +84,80 @@ export async function getPaymentsByInvoice(invoiceId: string): Promise<PaymentRe
       throw new Error('Invoice not found.');
     }
     throw new Error('Failed to fetch payments.');
+  }
+}
+
+/**
+ * Get all payments with optional filters
+ * @param filters - Payment history filters
+ * @returns Paginated payment response
+ */
+export async function getPayments(filters?: PaymentHistoryFilters): Promise<Page<PaymentResponseDTO>> {
+  try {
+    // Build query parameters from filters
+    const params = new URLSearchParams();
+
+    if (filters?.customerId) {
+      params.append('customerId', filters.customerId);
+    }
+    if (filters?.startDate) {
+      params.append('startDate', filters.startDate.toISOString().split('T')[0]);
+    }
+    if (filters?.endDate) {
+      params.append('endDate', filters.endDate.toISOString().split('T')[0]);
+    }
+    if (filters?.paymentMethod && filters.paymentMethod.length > 0) {
+      filters.paymentMethod.forEach(method => params.append('paymentMethod', method));
+    }
+    if (filters?.reference) {
+      params.append('reference', filters.reference);
+    }
+    if (filters?.page !== undefined) {
+      params.append('page', filters.page.toString());
+    }
+    if (filters?.size !== undefined) {
+      params.append('size', filters.size.toString());
+    }
+    if (filters?.sort) {
+      params.append('sort', filters.sort);
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/payments?${queryString}` : '/payments';
+
+    const response = await apiClient.get<Page<PaymentResponseDTO>>(url);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch payments.');
+  }
+}
+
+/**
+ * Get payment statistics
+ * @param startDate - Optional start date for statistics
+ * @param endDate - Optional end date for statistics
+ * @returns Payment statistics
+ */
+export async function getPaymentStatistics(
+  startDate?: Date,
+  endDate?: Date
+): Promise<PaymentStatistics> {
+  try {
+    const params = new URLSearchParams();
+
+    if (startDate) {
+      params.append('startDate', startDate.toISOString().split('T')[0]);
+    }
+    if (endDate) {
+      params.append('endDate', endDate.toISOString().split('T')[0]);
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/payments/statistics?${queryString}` : '/payments/statistics';
+
+    const response = await apiClient.get<PaymentStatistics>(url);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch payment statistics.');
   }
 }

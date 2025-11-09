@@ -5,7 +5,7 @@
  * Displays full invoice details with action buttons and print layout
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   Edit,
   Send,
   Copy,
@@ -39,6 +45,8 @@ import type { InvoiceResponseDTO, InvoiceStatus } from "@/lib/api/types";
 import { SendConfirmationDialog } from "./send-confirmation-dialog";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { PaymentForm } from "@/components/payments/payment-form";
+import { PaymentHistory } from "@/components/payments/payment-history";
+import { getPaymentsByInvoice } from "@/lib/api/payments";
 import { toast } from "sonner";
 
 interface InvoiceDetailProps {
@@ -75,6 +83,21 @@ export function InvoiceDetail({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [paymentCount, setPaymentCount] = useState<number>(0);
+
+  // Fetch payment count for the badge
+  useEffect(() => {
+    const fetchPaymentCount = async () => {
+      try {
+        const payments = await getPaymentsByInvoice(invoice.id);
+        setPaymentCount(payments.length);
+      } catch (error) {
+        // Silently fail - payment count is not critical
+        setPaymentCount(0);
+      }
+    };
+    fetchPaymentCount();
+  }, [invoice.id]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -156,6 +179,13 @@ export function InvoiceDetail({
   const handlePaymentSuccess = async () => {
     if (onPaymentRecorded) {
       await onPaymentRecorded();
+    }
+    // Refresh payment count
+    try {
+      const payments = await getPaymentsByInvoice(invoice.id);
+      setPaymentCount(payments.length);
+    } catch (error) {
+      // Silently fail
     }
   };
 
@@ -303,6 +333,18 @@ export function InvoiceDetail({
         </CardContent>
       </Card>
 
+      {/* Tabs for Details and Payments */}
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="payments">
+            Payments {paymentCount > 0 && `(${paymentCount})`}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="details" className="space-y-6 mt-6">
+          {/* Details Tab Content - existing invoice details */}
+
       {/* Customer Information */}
       <Card>
         <CardHeader>
@@ -406,17 +448,24 @@ export function InvoiceDetail({
         </CardContent>
       </Card>
 
-      {/* Notes */}
-      {invoice.notes && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm whitespace-pre-wrap">{invoice.notes}</p>
-          </CardContent>
-        </Card>
-      )}
+          {/* Notes */}
+          {invoice.notes && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{invoice.notes}</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="payments" className="mt-6">
+          {/* Payments Tab Content */}
+          <PaymentHistory invoiceId={invoice.id} invoice={invoice} />
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       <SendConfirmationDialog
