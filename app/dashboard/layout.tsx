@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Menu, User } from "lucide-react";
 import { useState } from "react";
+import { PaymentModalProvider } from "@/app/providers/payment-modal-provider";
 
 export default function DashboardLayout({
   children,
@@ -272,6 +273,9 @@ export default function DashboardLayout({
           </p>
         </div>
       </footer>
+
+      {/* Global Payment Modal */}
+      <PaymentModalProvider />
     </div>
   );
 }

@@ -37,6 +37,21 @@ export default function InvoiceDetailPage() {
     }
   }, [id, fetchInvoice]);
 
+  // Listen for payment-recorded events from the global modal
+  useEffect(() => {
+    const handlePaymentRecorded = (event: CustomEvent) => {
+      if (event.detail.invoiceId === id) {
+        // Refetch invoice to show updated balance and status
+        fetchInvoice(id);
+      }
+    };
+
+    window.addEventListener('payment-recorded' as any, handlePaymentRecorded as EventListener);
+    return () => {
+      window.removeEventListener('payment-recorded' as any, handlePaymentRecorded as EventListener);
+    };
+  }, [id, fetchInvoice]);
+
   const handleSend = async () => {
     await sendInvoice(id);
     // Refresh the invoice to show updated status

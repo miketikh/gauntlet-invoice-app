@@ -44,9 +44,9 @@ import {
 import type { InvoiceResponseDTO, InvoiceStatus } from "@/lib/api/types";
 import { SendConfirmationDialog } from "./send-confirmation-dialog";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
-import { PaymentForm } from "@/components/payments/payment-form";
 import { PaymentHistory } from "@/components/payments/payment-history";
 import { getPaymentsByInvoice } from "@/lib/api/payments";
+import { usePaymentModalStore } from "@/lib/stores/payment-modal-store";
 import { toast } from "sonner";
 
 interface InvoiceDetailProps {
@@ -79,9 +79,9 @@ export function InvoiceDetail({
   onPaymentRecorded,
 }: InvoiceDetailProps) {
   const router = useRouter();
+  const { openPaymentModal } = usePaymentModalStore();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [paymentCount, setPaymentCount] = useState<number>(0);
 
@@ -176,18 +176,6 @@ export function InvoiceDetail({
     return "";
   };
 
-  const handlePaymentSuccess = async () => {
-    if (onPaymentRecorded) {
-      await onPaymentRecorded();
-    }
-    // Refresh payment count
-    try {
-      const payments = await getPaymentsByInvoice(invoice.id);
-      setPaymentCount(payments.length);
-    } catch (error) {
-      // Silently fail
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -236,7 +224,7 @@ export function InvoiceDetail({
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => setPaymentDialogOpen(true)}
+                      onClick={() => openPaymentModal(invoice.id)}
                       disabled={!canRecordPayment}
                     >
                       <DollarSign className="h-4 w-4 mr-2" />
@@ -482,13 +470,6 @@ export function InvoiceDetail({
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         loading={loading}
-      />
-
-      <PaymentForm
-        invoice={invoice}
-        open={paymentDialogOpen}
-        onOpenChange={setPaymentDialogOpen}
-        onSuccess={handlePaymentSuccess}
       />
     </div>
   );

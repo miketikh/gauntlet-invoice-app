@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { useInvoiceStore } from "@/lib/stores/invoice-store";
+import { usePaymentModalStore } from "@/lib/stores/payment-modal-store";
 import {
   Plus,
   ChevronLeft,
@@ -38,7 +39,24 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  DollarSign,
+  MoreVertical,
+  Eye,
+  Edit,
+  Send,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InvoiceListItemDTO, InvoiceStatus, BulkActionType, CustomerListItemDTO } from "@/lib/api/types";
 import { customerApi } from "@/lib/api";
 import { BulkActionsMenu } from "./bulk-actions-menu";
@@ -84,6 +102,8 @@ export function InvoiceList() {
     selectAllInvoices,
     deselectAllInvoices,
   } = useInvoiceStore();
+
+  const { openPaymentModal } = usePaymentModalStore();
 
   const [customers, setCustomers] = useState<CustomerListItemDTO[]>([]);
   const [localSearch, setLocalSearch] = useState(filters.search || "");
@@ -146,6 +166,15 @@ export function InvoiceList() {
   // Fetch invoices on mount
   useEffect(() => {
     fetchInvoices();
+  }, [fetchInvoices]);
+
+  // Listen for payment-recorded events to refresh invoice list
+  useEffect(() => {
+    const handlePaymentRecorded = () => {
+      fetchInvoices();
+    };
+    window.addEventListener('payment-recorded', handlePaymentRecorded as EventListener);
+    return () => window.removeEventListener('payment-recorded', handlePaymentRecorded as EventListener);
   }, [fetchInvoices]);
 
   // Update URL when filters/pagination/sorting change
@@ -444,6 +473,7 @@ export function InvoiceList() {
                       </div>
                     </TableHead>
                     <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-right w-20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -489,6 +519,92 @@ export function InvoiceList() {
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(invoice.balance)}
+                      </TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Quick Pay Button - only for Sent invoices with balance */}
+                          {invoice.status === "Sent" && invoice.balance > 0 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openPaymentModal(invoice.id);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <DollarSign className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Record Payment</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+
+                          {/* Dropdown Menu */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRowClick(invoice.id);
+                                }}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              {invoice.status === "Sent" && invoice.balance > 0 && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openPaymentModal(invoice.id);
+                                  }}
+                                >
+                                  <DollarSign className="mr-2 h-4 w-4" />
+                                  Record Payment
+                                </DropdownMenuItem>
+                              )}
+                              {invoice.status === "Draft" && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/invoices/${invoice.id}/edit`);
+                                    }}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toast.info("Send invoice from detail page");
+                                      handleRowClick(invoice.id);
+                                    }}
+                                  >
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Send
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

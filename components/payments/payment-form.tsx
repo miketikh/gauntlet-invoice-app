@@ -2,7 +2,8 @@
 
 /**
  * PaymentForm Component
- * Modal dialog form for recording payments against invoices
+ * Global modal dialog form for recording payments against invoices
+ * Fetches invoice data internally based on invoiceId from Zustand store
  */
 
 import { useState, useEffect } from "react";
@@ -37,16 +38,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DatePicker } from "@/components/invoices/date-picker";
 import { formatCurrency } from "@/lib/utils";
 import { recordPayment } from "@/lib/api/payments";
+import { getInvoiceById } from "@/lib/api/invoices";
+import { usePaymentModalStore } from "@/lib/stores/payment-modal-store";
 import type { InvoiceResponseDTO, PaymentMethod } from "@/lib/api/types";
 
 interface PaymentFormProps {
-  invoice: InvoiceResponseDTO;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess?: () => void; // Optional callback for additional success handling
 }
 
 // Payment method options
@@ -70,14 +71,15 @@ const paymentFormSchema = z.object({
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
-export function PaymentForm({
-  invoice,
-  open,
-  onOpenChange,
-  onSuccess,
-}: PaymentFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [remainingBalance, setRemainingBalance] = useState(invoice.balance);
+export function PaymentForm({ onSuccess }: PaymentFormProps) {
+  // Connect to Zustand store
+  const { isOpen, invoiceId, closePaymentModal } = usePaymentModalStore();
+
+  // Local state
+  const [invoice, setInvoice] = useState<InvoiceResponseDTO | null>(null);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
+  const [remainingBalance, setRemainingBalance] = useState(0);
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
@@ -90,8 +92,34 @@ export function PaymentForm({
     },
   });
 
+  // Fetch invoice data when invoiceId changes
+  useEffect(() => {
+    const fetchInvoice = async () => {
+      if (!invoiceId) {
+        setInvoice(null);
+        return;
+      }
+
+      setLoadingInvoice(true);
+      try {
+        const data = await getInvoiceById(invoiceId);
+        setInvoice(data);
+        setRemainingBalance(data.balance);
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load invoice");
+        closePaymentModal();
+      } finally {
+        setLoadingInvoice(false);
+      }
+    };
+
+    fetchInvoice();
+  }, [invoiceId, closePaymentModal]);
+
   // Custom validation for amount not exceeding balance
   const validateAmount = (amount: number): boolean => {
+    if (!invoice) return false;
+
     if (amount > invoice.balance) {
       form.setError("amount", {
         type: "manual",
@@ -107,6 +135,8 @@ export function PaymentForm({
   const watchAmount = form.watch("amount");
 
   useEffect(() => {
+    if (!invoice) return;
+
     const amount = watchAmount || 0;
     const remaining = invoice.balance - amount;
     setRemainingBalance(remaining);
@@ -115,11 +145,11 @@ export function PaymentForm({
     if (amount > 0) {
       validateAmount(amount);
     }
-  }, [watchAmount, invoice.balance]);
+  }, [watchAmount, invoice]);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
-    if (!open) {
+    if (!isOpen) {
       form.reset({
         paymentDate: new Date(),
         amount: 0,
@@ -127,17 +157,21 @@ export function PaymentForm({
         reference: "",
         notes: "",
       });
-      setRemainingBalance(invoice.balance);
+      if (invoice) {
+        setRemainingBalance(invoice.balance);
+      }
     }
-  }, [open, form, invoice.balance]);
+  }, [isOpen, form, invoice]);
 
   const onSubmit = async (values: PaymentFormValues) => {
+    if (!invoice) return;
+
     // Final validation
     if (!validateAmount(values.amount)) {
       return;
     }
 
-    setLoading(true);
+    setLoadingPayment(true);
     try {
       const response = await recordPayment(invoice.id, {
         paymentDate: values.paymentDate.toISOString().split("T")[0],
@@ -155,18 +189,27 @@ export function PaymentForm({
         toast.success(`Invoice #${invoice.invoiceNumber} is now fully paid`);
       }
 
-      // Call success callback and close dialog
-      onSuccess();
-      onOpenChange(false);
+      // Call optional success callback
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      // Dispatch custom event for listeners (like invoice detail page)
+      window.dispatchEvent(new CustomEvent('payment-recorded', {
+        detail: { invoiceId: invoice.id }
+      }));
+
+      // Close dialog
+      closePaymentModal();
     } catch (error: any) {
       toast.error(error.message || "Failed to record payment");
     } finally {
-      setLoading(false);
+      setLoadingPayment(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={closePaymentModal}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Record Payment</DialogTitle>
@@ -176,29 +219,41 @@ export function PaymentForm({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Loading State */}
+        {loadingInvoice && (
+          <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        )}
+
         {/* Invoice Context Display */}
-        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Invoice Number:</span>
-              <div className="font-semibold">{invoice.invoiceNumber}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Customer:</span>
-              <div className="font-semibold">{invoice.customerName}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Invoice Total:</span>
-              <div className="font-semibold">{formatCurrency(invoice.totalAmount)}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Current Balance:</span>
-              <div className="font-semibold text-orange-600 dark:text-orange-400">
-                {formatCurrency(invoice.balance)}
+        {!loadingInvoice && invoice && (
+          <>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Invoice Number:</span>
+                  <div className="font-semibold">{invoice.invoiceNumber}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Customer:</span>
+                  <div className="font-semibold">{invoice.customerName}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Invoice Total:</span>
+                  <div className="font-semibold">{formatCurrency(invoice.totalAmount)}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Current Balance:</span>
+                  <div className="font-semibold text-orange-600 dark:text-orange-400">
+                    {formatCurrency(invoice.balance)}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -339,18 +394,20 @@ export function PaymentForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
+                onClick={closePaymentModal}
+                disabled={loadingPayment}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? "Recording..." : "Record Payment"}
+              <Button type="submit" disabled={loadingPayment}>
+                {loadingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {loadingPayment ? "Recording..." : "Record Payment"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

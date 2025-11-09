@@ -33,6 +33,8 @@ import { getPayments, getPaymentStatistics } from '@/lib/api/payments';
 import { PaymentDetailsModal } from '@/components/payments/payment-details-modal';
 import { PaymentTypeBadge, getPaymentType } from '@/components/payments/payment-type-badge';
 import { PaymentMethodIcon, getPaymentMethodLabel } from '@/components/payments/payment-method-icon';
+import { InvoiceSelector } from '@/components/invoices/invoice-selector';
+import { usePaymentModalStore } from '@/lib/stores/payment-modal-store';
 import type {
   PaymentResponseDTO,
   PaymentHistoryFilters,
@@ -46,6 +48,7 @@ const PAYMENT_METHODS: PaymentMethod[] = ['CREDIT_CARD', 'BANK_TRANSFER', 'CHECK
 export default function PaymentsPage() {
   useRequireAuth();
 
+  const { openPaymentModal } = usePaymentModalStore();
   const [payments, setPayments] = useState<Page<PaymentResponseDTO> | null>(null);
   const [statistics, setStatistics] = useState<PaymentStatistics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,7 @@ export default function PaymentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [invoiceSelectorOpen, setInvoiceSelectorOpen] = useState(false);
 
   // Filters state
   const [filters, setFilters] = useState<PaymentHistoryFilters>({
@@ -98,6 +102,28 @@ export default function PaymentsPage() {
     fetchStatistics();
   }, []);
 
+  // Listen for payment-recorded events to refresh payment list
+  useEffect(() => {
+    const handlePaymentRecorded = async () => {
+      // Refresh payments list
+      try {
+        const data = await getPayments(filters);
+        setPayments(data);
+      } catch (err: any) {
+        console.error('Failed to refresh payments:', err);
+      }
+      // Refresh statistics
+      try {
+        const stats = await getPaymentStatistics();
+        setStatistics(stats);
+      } catch (err: any) {
+        console.error('Failed to refresh statistics:', err);
+      }
+    };
+    window.addEventListener('payment-recorded', handlePaymentRecorded as EventListener);
+    return () => window.removeEventListener('payment-recorded', handlePaymentRecorded as EventListener);
+  }, [filters]);
+
   const handleSearch = () => {
     setFilters((prev) => ({
       ...prev,
@@ -139,6 +165,10 @@ export default function PaymentsPage() {
     alert('CSV export functionality coming soon!');
   };
 
+  const handleSelectInvoice = (invoiceId: string) => {
+    openPaymentModal(invoiceId);
+  };
+
   const activeFiltersCount =
     (filters.reference ? 1 : 0) +
     (filters.paymentMethod?.length ? 1 : 0);
@@ -153,9 +183,15 @@ export default function PaymentsPage() {
             View and manage all payment transactions
           </p>
         </div>
-        <Button variant="outline" onClick={handleExportCSV}>
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setInvoiceSelectorOpen(true)}>
+            <DollarSign className="h-4 w-4 mr-2" />
+            Record Payment
+          </Button>
+          <Button variant="outline" onClick={handleExportCSV}>
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -416,6 +452,13 @@ export default function PaymentsPage() {
         paymentId={selectedPaymentId}
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
+      />
+
+      {/* Invoice Selector Modal */}
+      <InvoiceSelector
+        open={invoiceSelectorOpen}
+        onOpenChange={setInvoiceSelectorOpen}
+        onSelectInvoice={handleSelectInvoice}
       />
     </div>
   );
