@@ -1,0 +1,238 @@
+# Story 4.3: Performance Optimization
+
+## Status
+Draft
+
+## Story
+**As a** developer,
+**I want** to optimize application performance,
+**so that** the system meets the required response time benchmarks.
+
+## Acceptance Criteria
+1. Database indexes on frequently queried fields (customerId, status, dates)
+2. Query optimization using EXPLAIN plans and query hints
+3. Lazy loading strategy for invoice line items
+4. API response caching for read-heavy endpoints
+5. Frontend bundle optimization with code splitting
+6. Image and asset optimization with CDN configuration
+7. Performance tests verifying <200ms API response times
+8. React memo and useMemo optimization for expensive renders
+
+## Tasks / Subtasks
+- [x] Add database indexes (AC: 1)
+  - [ ] Create migration: V2__add_performance_indexes.sql
+  - [ ] Add index on customers.email (for searches)
+  - [ ] Add index on customers.is_deleted
+  - [ ] Add index on invoices.customer_id
+  - [ ] Add index on invoices.status
+  - [ ] Add index on invoices.due_date
+  - [ ] Add index on invoices.invoice_number (unique already indexed)
+  - [ ] Add index on invoices.issue_date
+  - [ ] Add index on payments.invoice_id
+  - [ ] Add index on payments.payment_date
+  - [ ] Add composite index on invoices (customer_id, status)
+  - [ ] Add composite index on payments (invoice_id, payment_date)
+  - [ ] Test index usage with EXPLAIN ANALYZE
+  - [ ] Measure query performance before/after indexes
+
+- [ ] Optimize database queries (AC: 2)
+  - [ ] Analyze slow queries with EXPLAIN ANALYZE
+  - [ ] Add query hints for complex queries
+  - [ ] Use JOIN FETCH for eager loading when needed
+  - [ ] Optimize ListInvoicesQuery to use projections
+  - [ ] Optimize dashboard statistics query
+  - [ ] Use native queries for complex read models
+  - [ ] Add pagination to all list queries
+  - [ ] Limit default page size to 20
+  - [ ] Add database query logging in development
+  - [ ] Review N+1 query problems
+
+- [ ] Implement lazy loading for line items (AC: 3)
+  - [ ] Configure Invoice.lineItems as JSONB (already done)
+  - [ ] Don't fetch line items in list queries
+  - [ ] Fetch line items only in GetInvoiceByIdQuery
+  - [ ] Use DTO projections for list views (exclude lineItems)
+  - [ ] Test lazy loading behavior
+  - [ ] Verify performance improvement in list queries
+
+- [ ] Add API response caching (AC: 4)
+  - [ ] Add Spring Cache dependency to pom.xml
+  - [ ] Configure CacheManager with Caffeine
+  - [ ] Cache customer list queries (5 min TTL)
+  - [ ] Cache invoice statistics (1 min TTL)
+  - [ ] Cache payment statistics (1 min TTL)
+  - [ ] Evict cache on command operations
+  - [ ] Add @Cacheable to query handlers
+  - [ ] Add @CacheEvict to command handlers
+  - [ ] Test cache hit/miss behavior
+  - [ ] Monitor cache statistics
+
+- [ ] Optimize frontend bundle (AC: 5)
+  - [ ] Configure Next.js bundle analyzer
+  - [ ] Implement code splitting by route
+  - [ ] Lazy load heavy components (charts, editors)
+  - [ ] Use dynamic imports for modals
+  - [ ] Tree shake unused dependencies
+  - [ ] Minimize bundle size
+  - [ ] Target bundle < 200KB gzipped
+  - [ ] Analyze bundle with webpack analyzer
+  - [ ] Remove unused Shadcn/ui components
+
+- [ ] Optimize images and assets (AC: 6)
+  - [ ] Use Next.js Image component
+  - [ ] Configure image optimization
+  - [ ] Use WebP format for images
+  - [ ] Lazy load images below fold
+  - [ ] Add loading placeholders
+  - [ ] Configure CDN for static assets (production)
+  - [ ] Optimize icon sizes
+  - [ ] Use SVG for logos and icons
+
+- [ ] Add performance tests (AC: 7)
+  - [ ] Create PerformanceTest.java
+  - [ ] Test API response times:
+    - GET /api/customers (list) < 200ms
+    - GET /api/customers/{id} < 100ms
+    - GET /api/invoices (list) < 200ms
+    - GET /api/invoices/{id} < 150ms
+    - GET /api/payments (list) < 200ms
+    - POST /api/customers < 150ms
+    - POST /api/invoices < 200ms
+  - [ ] Use JMH or simple timing assertions
+  - [ ] Test with realistic data volumes (1000 records)
+  - [ ] Fail build if performance degrades
+  - [ ] Add performance benchmarks to CI
+
+- [ ] Optimize React renders (AC: 8)
+  - [ ] Use React.memo for expensive components
+  - [ ] Use useMemo for expensive calculations
+  - [ ] Use useCallback for event handlers
+  - [ ] Avoid inline function creation in renders
+  - [ ] Optimize list rendering with keys
+  - [ ] Use virtualization for long lists (if needed)
+  - [ ] Profile with React DevTools
+  - [ ] Minimize re-renders in Zustand stores
+
+- [ ] Add database connection pooling (AC: 2)
+  - [ ] Configure HikariCP (default in Spring Boot)
+  - [ ] Set pool size: min=5, max=20
+  - [ ] Set connection timeout: 30s
+  - [ ] Set idle timeout: 10min
+  - [ ] Monitor connection pool usage
+  - [ ] Test under load
+
+- [ ] Optimize API response sizes (AC: 4)
+  - [ ] Use DTOs to exclude unnecessary fields
+  - [ ] Implement sparse fieldsets (optional)
+  - [ ] Compress responses with Gzip
+  - [ ] Paginate all list endpoints
+  - [ ] Limit nested object depth
+  - [ ] Measure response sizes
+
+- [ ] Add performance monitoring (AC: 7)
+  - [ ] Enable Spring Actuator metrics
+  - [ ] Add custom metrics for business operations
+  - [ ] Monitor API response times
+  - [ ] Monitor database query times
+  - [ ] Monitor cache hit rates
+  - [ ] Export metrics to console (development)
+  - [ ] Document performance metrics
+
+## Dev Notes
+
+### Architecture Context
+
+**Performance Requirements** [Source: PRD NFR1, NFR2]:
+- API response times < 200ms for standard CRUD operations
+- UI smooth and responsive without lag
+- Query optimization for read-heavy operations
+- Caching strategy for frequently accessed data
+
+**Database Optimization** [Source: architecture.md]:
+- PostgreSQL 15 with proper indexing
+- JSONB for line items (efficient storage)
+- Query projections for list views
+- Pagination for all list queries
+
+**Frontend Optimization** [Source: PRD Technical Assumptions]:
+- Next.js built-in optimizations
+- Code splitting by route
+- Image optimization with Next/Image
+- Bundle size < 200KB gzipped
+
+**Caching Strategy** [Source: architecture.md#Tech Stack]:
+- Initially: None (YAGNI)
+- This story adds caching for read-heavy endpoints
+- Spring Cache with Caffeine provider
+- Short TTL (1-5 minutes)
+- Cache invalidation on writes
+
+### File Locations
+
+**Backend:**
+```
+backend/src/main/resources/db/migration/
+└── V2__add_performance_indexes.sql              # Database indexes (NEW)
+
+backend/src/main/java/com/invoiceme/config/
+└── CacheConfig.java                             # Cache configuration (NEW)
+
+backend/src/main/java/com/invoiceme/features/
+├── customer/queries/
+│   └── ListCustomersQueryHandler.java           # Add @Cacheable (MODIFY)
+├── invoice/queries/
+│   └── ListInvoicesQueryHandler.java            # Add @Cacheable (MODIFY)
+└── payment/queries/
+    └── PaymentStatisticsQueryHandler.java       # Add @Cacheable (MODIFY)
+
+backend/src/test/java/com/invoiceme/performance/
+└── PerformanceTest.java                         # Performance tests (NEW)
+```
+
+**Frontend:**
+```
+next.config.js                                   # Bundle optimization config (MODIFY)
+components/                                      # Add React.memo (MODIFY)
+lib/stores/                                      # Optimize re-renders (MODIFY)
+```
+
+### Testing Requirements
+
+- Performance tests for all API endpoints
+- Verify response times < 200ms
+- Test with realistic data volumes
+- Test cache behavior (hit/miss)
+- Test query performance with EXPLAIN
+- Profile frontend rendering
+- Measure bundle sizes
+
+## Testing
+- Performance tests in PerformanceTest.java
+- Verify API response times < 200ms
+- Test database query optimization
+- Test cache hit rates
+- Test frontend bundle size
+- Profile React component renders
+- Load testing with realistic data
+
+## Change Log
+| Date | Version | Description | Author |
+|------|---------|-------------|---------|
+| 2025-11-08 | v1.0 | Initial story creation from PRD Epic 4 Story 4.3 | Claude (Story Agent) |
+
+## Dev Agent Record
+
+### Agent Model Used
+Not yet implemented
+
+### Debug Log References
+None yet - will be populated during implementation
+
+### Completion Notes List
+None yet - will be populated during implementation
+
+### File List
+None yet - will be populated during implementation
+
+## QA Results
+Not yet reviewed

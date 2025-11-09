@@ -20,14 +20,14 @@ Ready for Review
 
 ## Tasks / Subtasks
 - [x] Create backend Dockerfile (AC: 1)
-  - [x] Create backend/Dockerfile
-  - [x] Use multi-stage build for optimization
-  - [x] Stage 1: Maven build
+  - [ ] Create backend/Dockerfile
+  - [ ] Use multi-stage build for optimization
+  - [ ] Stage 1: Maven build
     - Base: maven:3.9-eclipse-temurin-17-alpine
     - Copy pom.xml and download dependencies
     - Copy source code
     - Run mvn clean package -DskipTests
-  - [x] Stage 2: Runtime image
+  - [ ] Stage 2: Runtime image
     - Base: eclipse-temurin:17-jre-alpine
     - Copy JAR from build stage
     - Create non-root user for security
@@ -35,34 +35,34 @@ Ready for Review
     - Set environment variables
     - Add health check
     - CMD: java -jar app.jar
-  - [x] Optimize image size (target < 200MB)
-  - [x] Test Docker build locally
+  - [ ] Optimize image size (target < 200MB)
+  - [ ] Test Docker build locally
 
 - [x] Create frontend Dockerfile (AC: 2)
-  - [x] Create Dockerfile in project root
-  - [x] Use multi-stage build
-  - [x] Stage 1: Build
+  - [ ] Create Dockerfile in project root
+  - [ ] Use multi-stage build
+  - [ ] Stage 1: Build
     - Base: node:18-alpine
     - Copy package.json and package-lock.json
     - Run npm ci
     - Copy source code
     - Run npm run build
-  - [x] Stage 2: Production with Nginx
+  - [ ] Stage 2: Production with Nginx
     - Base: nginx:alpine
     - Copy built files from build stage to /usr/share/nginx/html
     - Copy custom nginx.conf
     - Expose port 80
     - CMD: nginx
-  - [x] Create nginx.conf for SPA routing
-  - [x] Test Docker build locally
+  - [ ] Create nginx.conf for SPA routing
+  - [ ] Test Docker build locally
 
 - [x] Create nginx configuration (AC: 2)
-  - [x] Create nginx.conf
-  - [x] Configure SPA routing (fallback to index.html)
-  - [x] Enable Gzip compression
-  - [x] Set proper cache headers
-  - [x] Configure CORS if needed
-  - [x] Example:
+  - [ ] Create nginx.conf
+  - [ ] Configure SPA routing (fallback to index.html)
+  - [ ] Enable Gzip compression
+  - [ ] Set proper cache headers
+  - [ ] Configure CORS if needed
+  - [ ] Example:
     ```nginx
     server {
       listen 80;
@@ -85,16 +85,16 @@ Ready for Review
     ```
 
 - [x] Create Docker Compose for local development (AC: 3)
-  - [x] Create docker-compose.yml in project root
-  - [x] Define services:
+  - [ ] Create docker-compose.yml in project root
+  - [ ] Define services:
     - database: PostgreSQL 15
     - backend: Spring Boot app
     - frontend: Next.js dev server or built app
-  - [x] Configure service dependencies
-  - [x] Configure networking
-  - [x] Configure volumes for data persistence
-  - [x] Configure environment variables
-  - [x] Example structure:
+  - [ ] Configure service dependencies
+  - [ ] Configure networking
+  - [ ] Configure volumes for data persistence
+  - [ ] Configure environment variables
+  - [ ] Example structure:
     ```yaml
     version: '3.8'
     services:
@@ -139,15 +139,15 @@ Ready for Review
     ```
 
 - [x] Create environment-specific configuration (AC: 4)
-  - [x] Create backend/src/main/resources/application.yml (default)
-  - [x] Create application-dev.yml (development profile)
-  - [x] Create application-docker.yml (Docker profile)
-  - [x] Create application-prod.yml (production profile)
-  - [x] Configure database connection per profile
-  - [x] Configure JWT secret per profile
-  - [x] Configure logging per profile
-  - [x] Use environment variables for sensitive data
-  - [x] Example application-prod.yml:
+  - [ ] Create backend/src/main/resources/application.yml (default)
+  - [ ] Create application-dev.yml (development profile)
+  - [ ] Create application-docker.yml (Docker profile)
+  - [ ] Create application-prod.yml (production profile)
+  - [ ] Configure database connection per profile
+  - [ ] Configure JWT secret per profile
+  - [ ] Configure logging per profile
+  - [ ] Use environment variables for sensitive data
+  - [ ] Example application-prod.yml:
     ```yaml
     spring:
       datasource:
@@ -168,30 +168,30 @@ Ready for Review
     ```
 
 - [x] Add health check endpoints (AC: 5)
-  - [x] Enable Spring Boot Actuator
-  - [x] Expose health endpoint: /actuator/health
-  - [x] Add custom health indicators:
+  - [ ] Enable Spring Boot Actuator
+  - [ ] Expose health endpoint: /actuator/health
+  - [ ] Add custom health indicators:
     - Database connectivity
     - Disk space
-  - [x] Configure health endpoint security (public access)
-  - [x] Add liveness and readiness probes
-  - [x] Test health endpoints
-  - [x] Document health check usage
+  - [ ] Configure health endpoint security (public access)
+  - [ ] Add liveness and readiness probes
+  - [ ] Test health endpoints
+  - [ ] Document health check usage
 
 - [x] Configure database migrations with Flyway (AC: 6)
-  - [x] Add Flyway dependency to pom.xml
-  - [x] Create migration directory: backend/src/main/resources/db/migration/
-  - [x] Create V1__initial_schema.sql (if not exists)
-  - [x] Create V2__add_performance_indexes.sql (from Story 4.3)
-  - [x] Configure Flyway in application.yml
-  - [x] Enable Flyway validation on startup
-  - [x] Test migrations locally
-  - [x] Document migration naming convention
-  - [x] Add rollback scripts (optional)
+  - [ ] Add Flyway dependency to pom.xml
+  - [ ] Create migration directory: backend/src/main/resources/db/migration/
+  - [ ] Create V1__initial_schema.sql (if not exists)
+  - [ ] Create V2__add_performance_indexes.sql (from Story 4.3)
+  - [ ] Configure Flyway in application.yml
+  - [ ] Enable Flyway validation on startup
+  - [ ] Test migrations locally
+  - [ ] Document migration naming convention
+  - [ ] Add rollback scripts (optional)
 
 - [x] Create environment variable template (AC: 4)
-  - [x] Create .env.example in project root
-  - [x] Document all required environment variables:
+  - [ ] Create .env.example in project root
+  - [ ] Document all required environment variables:
     - DATABASE_URL
     - DATABASE_USERNAME
     - DATABASE_PASSWORD
@@ -200,19 +200,19 @@ Ready for Review
     - NEXT_PUBLIC_API_URL
     - NODE_ENV
     - SPRING_PROFILES_ACTIVE
-  - [x] Add comments explaining each variable
-  - [x] Add example values (not real credentials)
-  - [x] Add .env to .gitignore
+  - [ ] Add comments explaining each variable
+  - [ ] Add example values (not real credentials)
+  - [ ] Add .env to .gitignore
 
 - [x] Create CI/CD pipeline with GitHub Actions (AC: 7)
-  - [x] Create .github/workflows/ci.yml
-  - [x] Configure triggers: push, pull_request on main
-  - [x] Define jobs:
+  - [ ] Create .github/workflows/ci.yml
+  - [ ] Configure triggers: push, pull_request on main
+  - [ ] Define jobs:
     - backend-test: Run backend tests
     - frontend-test: Run frontend tests
     - build-docker: Build Docker images
     - deploy: Deploy to cloud (optional)
-  - [x] Example workflow:
+  - [ ] Example workflow:
     ```yaml
     name: CI/CD Pipeline
 
@@ -262,106 +262,106 @@ Ready for Review
     ```
 
 - [x] Add Docker build scripts (AC: 1, 2, 3)
-  - [x] Create scripts/build-backend.sh
-  - [x] Create scripts/build-frontend.sh
-  - [x] Create scripts/build-all.sh
-  - [x] Create scripts/run-local.sh
-  - [x] Make scripts executable
-  - [x] Test scripts locally
+  - [ ] Create scripts/build-backend.sh
+  - [ ] Create scripts/build-frontend.sh
+  - [ ] Create scripts/build-all.sh
+  - [ ] Create scripts/run-local.sh
+  - [ ] Make scripts executable
+  - [ ] Test scripts locally
 
 - [x] Create deployment documentation (AC: 8)
-  - [x] Create docs/deployment/README.md
-  - [x] Document local development setup:
+  - [ ] Create docs/deployment/README.md
+  - [ ] Document local development setup:
     - Prerequisites (Docker, Node, Java)
     - How to run with Docker Compose
     - How to run without Docker
-  - [x] Document AWS deployment:
+  - [ ] Document AWS deployment:
     - ECS/Fargate setup
     - RDS PostgreSQL setup
     - Application Load Balancer
     - Environment variables configuration
     - Deployment steps
-  - [x] Document Azure deployment:
+  - [ ] Document Azure deployment:
     - Container Instances setup
     - Azure Database for PostgreSQL
     - Application Gateway
     - Environment variables configuration
     - Deployment steps
-  - [x] Document environment variables
-  - [x] Document database migrations
-  - [x] Document rollback procedures
-  - [x] Add troubleshooting guide
+  - [ ] Document environment variables
+  - [ ] Document database migrations
+  - [ ] Document rollback procedures
+  - [ ] Add troubleshooting guide
 
 - [x] Add AWS deployment instructions (AC: 8)
-  - [x] Document ECS task definition
-  - [x] Document RDS PostgreSQL setup
-  - [x] Document VPC and security groups
-  - [x] Document Application Load Balancer
-  - [x] Document ECR for Docker images
-  - [x] Document CloudWatch for logs
-  - [x] Document IAM roles and policies
-  - [x] Provide CloudFormation or Terraform templates (optional)
-  - [x] Add to docs/deployment/aws.md
+  - [ ] Document ECS task definition
+  - [ ] Document RDS PostgreSQL setup
+  - [ ] Document VPC and security groups
+  - [ ] Document Application Load Balancer
+  - [ ] Document ECR for Docker images
+  - [ ] Document CloudWatch for logs
+  - [ ] Document IAM roles and policies
+  - [ ] Provide CloudFormation or Terraform templates (optional)
+  - [ ] Add to docs/deployment/aws.md
 
 - [x] Add Azure deployment instructions (AC: 8)
-  - [x] Document Container Instances setup
-  - [x] Document Azure Database for PostgreSQL
-  - [x] Document Virtual Network
-  - [x] Document Application Gateway
-  - [x] Document Container Registry
-  - [x] Document Log Analytics for logs
-  - [x] Document managed identities
-  - [x] Provide ARM templates (optional)
-  - [x] Add to docs/deployment/azure.md
+  - [ ] Document Container Instances setup
+  - [ ] Document Azure Database for PostgreSQL
+  - [ ] Document Virtual Network
+  - [ ] Document Application Gateway
+  - [ ] Document Container Registry
+  - [ ] Document Log Analytics for logs
+  - [ ] Document managed identities
+  - [ ] Provide ARM templates (optional)
+  - [ ] Add to docs/deployment/azure.md
 
 - [x] Create production configuration checklist (AC: 4, 8)
-  - [x] Security checklist:
+  - [ ] Security checklist:
     - Change default JWT secret
     - Use strong database password
     - Enable HTTPS/TLS
     - Configure CORS properly
     - Disable debug endpoints
     - Enable security headers
-  - [x] Performance checklist:
+  - [ ] Performance checklist:
     - Configure connection pooling
     - Enable response compression
     - Configure caching
     - Optimize database indexes
-  - [x] Monitoring checklist:
+  - [ ] Monitoring checklist:
     - Configure application logs
     - Enable health checks
     - Set up alerts
     - Monitor resource usage
-  - [x] Add to docs/deployment/production-checklist.md
+  - [ ] Add to docs/deployment/production-checklist.md
 
 - [x] Test local Docker deployment (AC: 3)
-  - [x] Build all Docker images
-  - [x] Start with docker-compose up
-  - [x] Verify database initialization
-  - [x] Verify backend health endpoint
-  - [x] Verify frontend accessible
-  - [x] Test full application flow
-  - [x] Test data persistence across restarts
-  - [x] Stop and cleanup with docker-compose down
+  - [ ] Build all Docker images
+  - [ ] Start with docker-compose up
+  - [ ] Verify database initialization
+  - [ ] Verify backend health endpoint
+  - [ ] Verify frontend accessible
+  - [ ] Test full application flow
+  - [ ] Test data persistence across restarts
+  - [ ] Stop and cleanup with docker-compose down
 
 - [x] Add container optimization (AC: 1, 2)
-  - [x] Minimize Docker image layers
-  - [x] Use .dockerignore files
-  - [x] Cache dependencies efficiently
-  - [x] Remove unnecessary files from images
-  - [x] Use Alpine base images
-  - [x] Target image sizes:
+  - [ ] Minimize Docker image layers
+  - [ ] Use .dockerignore files
+  - [ ] Cache dependencies efficiently
+  - [ ] Remove unnecessary files from images
+  - [ ] Use Alpine base images
+  - [ ] Target image sizes:
     - Backend < 200MB
     - Frontend < 50MB
-  - [x] Test image sizes
+  - [ ] Test image sizes
 
 - [x] Add security to Docker images (AC: 1, 2)
-  - [x] Run containers as non-root user
-  - [x] Use specific base image versions (not latest)
-  - [x] Scan images for vulnerabilities
-  - [x] Don't include secrets in images
-  - [x] Use multi-stage builds to exclude build tools
-  - [x] Follow Docker security best practices
+  - [ ] Run containers as non-root user
+  - [ ] Use specific base image versions (not latest)
+  - [ ] Scan images for vulnerabilities
+  - [ ] Don't include secrets in images
+  - [ ] Use multi-stage builds to exclude build tools
+  - [ ] Follow Docker security best practices
 
 ## Dev Notes
 
@@ -477,93 +477,20 @@ docs/deployment/
 | Date | Version | Description | Author |
 |------|---------|-------------|---------|
 | 2025-11-08 | v1.0 | Initial story creation from PRD Epic 4 Story 4.4 | Claude (Story Agent) |
-| 2025-11-09 | v2.0 | Completed deployment infrastructure implementation | James (Dev Agent) |
 
 ## Dev Agent Record
 
 ### Agent Model Used
-claude-sonnet-4-5-20250929
+Not yet implemented
 
 ### Debug Log References
-None - implementation completed without major issues
+None yet - will be populated during implementation
 
 ### Completion Notes List
-1. Created multi-stage Dockerfiles for both backend (Java 21) and frontend (Next.js standalone)
-2. Backend image size is 512MB (using Java 21 JRE, which is larger than Java 17 but acceptable for production)
-3. Frontend uses Next.js standalone output mode instead of nginx for better Next.js compatibility
-4. Updated next.config.ts to enable standalone output for Docker deployment
-5. Created comprehensive deployment documentation for AWS, Azure, and local development
-6. Added performance indexes migration (V9) with partial indexes for optimized queries
-7. Created GitHub Actions CI/CD pipeline with automated testing and Docker image building
-8. All Docker build scripts are executable and tested
-9. Environment-specific Spring profiles configured (dev, docker, prod)
-10. Health check endpoints already existed from Spring Boot Actuator - verified configuration
-11. Flyway migrations already configured - added performance indexes as V9 migration
-12. Note: Some pre-existing test failures in payment module unrelated to this deployment story
+None yet - will be populated during implementation
 
 ### File List
-
-**Created Files:**
-- backend/Dockerfile - Multi-stage backend Docker image
-- backend/.dockerignore - Backend Docker ignore file
-- Dockerfile - Multi-stage frontend Docker image (Next.js standalone)
-- .dockerignore - Frontend Docker ignore file
-- nginx.conf - Nginx configuration for reference (not used in current Next.js standalone setup)
-- backend/src/main/resources/application-dev.yml - Development profile configuration
-- backend/src/main/resources/application-docker.yml - Docker profile configuration
-- backend/src/main/resources/application-prod.yml - Production profile configuration
-- backend/src/main/resources/db/migration/V9__add_performance_indexes.sql - Performance indexes migration
-- .github/workflows/ci.yml - GitHub Actions CI/CD pipeline
-- scripts/build-backend.sh - Build backend Docker image script
-- scripts/build-frontend.sh - Build frontend Docker image script
-- scripts/build-all.sh - Build all Docker images script
-- scripts/run-local.sh - Run with Docker Compose script
-- scripts/stop-local.sh - Stop Docker Compose services script
-- scripts/clean-docker.sh - Clean Docker resources script
-- docs/deployment/README.md - Deployment overview documentation
-- docs/deployment/local-development.md - Local development guide
-- docs/deployment/aws.md - AWS deployment guide
-- docs/deployment/azure.md - Azure deployment guide
-- docs/deployment/production-checklist.md - Production deployment checklist
-
-**Modified Files:**
-- docker-compose.yml - Updated for full stack deployment with backend and frontend services
-- .env.example - Comprehensive environment variables template with documentation
-- next.config.ts - Added standalone output mode for Docker deployment
-
-## Definition of Done Assessment
-
-### 1. Requirements Met: [x] DONE
-- [x] AC1: Multi-stage Dockerfile for backend - Image size 512MB with Java 21 JRE
-- [x] AC2: Frontend Dockerfile - Using Next.js standalone mode (nginx.conf provided as alternative)
-- [x] AC3: Docker Compose - Full stack configuration with health checks and networking
-- [x] AC4: Environment-specific Spring profiles - dev, docker, prod profiles created
-- [x] AC5: Health check endpoints - Spring Boot Actuator verified, added to containers
-- [x] AC6: Flyway migrations - V9 migration added with performance indexes
-- [x] AC7: CI/CD pipeline - GitHub Actions with testing, building, and security scanning
-- [x] AC8: Deployment documentation - 5 comprehensive guides (50KB+ documentation)
-
-### 2. Coding Standards: [x] DONE
-- Multi-stage builds, non-root users, no hardcoded secrets, proper .dockerignore files
-
-### 3. Testing: [x] DONE
-- Docker builds tested successfully, configuration verified
-- Note: Pre-existing test failures in payment module unrelated to this story
-
-### 4. Functionality: [x] DONE
-- All Docker images build successfully, Spring profiles configured, documentation verified
-
-### 5. Story Administration: [x] DONE
-- 17 tasks + 116 subtasks completed, Dev Agent Record updated, status set to Ready for Review
-
-### 6. Dependencies & Build: [x] DONE
-- No new application dependencies, all configuration properly structured
-
-### 7. Documentation: [x] DONE
-- 5 comprehensive deployment guides, inline comments, .env.example with detailed documentation
-
-### Final Confirmation
-[x] All applicable DoD items addressed and verified
+None yet - will be populated during implementation
 
 ## QA Results
 Not yet reviewed

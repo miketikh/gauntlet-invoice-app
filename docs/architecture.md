@@ -54,6 +54,94 @@ InvoiceMe implements a modular monolith architecture with a Spring Boot backend 
 - `/types` - Shared TypeScript interfaces for DTOs (if needed)
 - Root level Docker Compose for local development
 
+### C4 Model Architecture Diagrams
+
+The following diagrams use the C4 model to describe the system architecture at different levels of detail.
+
+#### Level 1: System Context Diagram
+
+```mermaid
+C4Context
+    title System Context - InvoiceMe
+
+    Person(user, "Business User", "Creates invoices and tracks payments")
+    System(invoiceMe, "InvoiceMe System", "Manages customers, invoices, and payment tracking")
+    System_Ext(email, "Email System", "Sends invoice notifications (future)")
+    System_Ext(payment, "Payment Gateway", "Processes online payments (future)")
+
+    Rel(user, invoiceMe, "Uses", "HTTPS")
+    Rel(invoiceMe, email, "Sends emails", "SMTP")
+    Rel(invoiceMe, payment, "Processes payments", "API")
+```
+
+#### Level 2: Container Diagram
+
+```mermaid
+C4Container
+    title Container Diagram - InvoiceMe System
+
+    Person(user, "Business User")
+
+    Container_Boundary(invoiceMe, "InvoiceMe System") {
+        Container(frontend, "Frontend Application", "Next.js, React, TypeScript", "Provides UI for invoice management")
+        Container(backend, "Backend API", "Spring Boot, Java 17", "Provides REST API with CQRS pattern")
+        ContainerDb(database, "Database", "PostgreSQL", "Stores customers, invoices, and payments")
+    }
+
+    Rel(user, frontend, "Uses", "HTTPS")
+    Rel(frontend, backend, "Makes API calls", "JSON/HTTPS")
+    Rel(backend, database, "Reads from and writes to", "JDBC")
+```
+
+#### Level 3: Component Diagram - Backend
+
+```mermaid
+C4Component
+    title Component Diagram - Backend API
+
+    Container_Boundary(backend, "Backend API - Spring Boot") {
+        Component(auth, "Authentication", "Spring Security, JWT", "Handles authentication and authorization")
+
+        Component_Boundary(customer, "Customer Vertical Slice") {
+            Component(custCmd, "Customer Commands", "Command Handlers", "Creates, updates, deletes customers")
+            Component(custQry, "Customer Queries", "Query Handlers", "Retrieves customer data")
+            Component(custDomain, "Customer Domain", "Domain Entity", "Customer business logic")
+            Component(custRepo, "Customer Repository", "JPA Repository", "Customer data access")
+        }
+
+        Component_Boundary(invoice, "Invoice Vertical Slice") {
+            Component(invCmd, "Invoice Commands", "Command Handlers", "Creates, sends invoices")
+            Component(invQry, "Invoice Queries", "Query Handlers", "Retrieves invoice data")
+            Component(invDomain, "Invoice Domain", "Aggregate Root", "Invoice business logic with line items")
+            Component(invRepo, "Invoice Repository", "JPA Repository", "Invoice data access")
+        }
+
+        Component_Boundary(payment, "Payment Vertical Slice") {
+            Component(payCmd, "Payment Commands", "Command Handlers", "Records payments")
+            Component(payQry, "Payment Queries", "Query Handlers", "Retrieves payment data")
+            Component(payDomain, "Payment Domain", "Domain Entity", "Payment business logic")
+            Component(payRepo, "Payment Repository", "JPA Repository", "Payment data access")
+        }
+    }
+
+    ContainerDb(database, "Database", "PostgreSQL")
+
+    Rel(custCmd, custDomain, "Uses")
+    Rel(custCmd, custRepo, "Uses")
+    Rel(custQry, custRepo, "Uses")
+    Rel(custRepo, database, "Reads/Writes")
+
+    Rel(invCmd, invDomain, "Uses")
+    Rel(invCmd, invRepo, "Uses")
+    Rel(invQry, invRepo, "Uses")
+    Rel(invRepo, database, "Reads/Writes")
+
+    Rel(payCmd, payDomain, "Uses")
+    Rel(payCmd, payRepo, "Uses")
+    Rel(payQry, payRepo, "Uses")
+    Rel(payRepo, database, "Reads/Writes")
+```
+
 ### High Level Architecture Diagram
 
 ```mermaid
@@ -101,6 +189,106 @@ graph TB
     Services --> API
 ```
 
+### Sequence Diagrams for Key Flows
+
+#### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant API as Spring Boot API
+    participant Security as Spring Security
+    participant DB as PostgreSQL
+
+    User->>Frontend: Enter credentials
+    Frontend->>API: POST /api/auth/login
+    API->>Security: Authenticate
+    Security->>DB: Query user
+    DB-->>Security: User details
+    Security->>Security: Validate password
+    Security->>Security: Generate JWT
+    Security-->>API: JWT token + refresh token
+    API-->>Frontend: {token, refreshToken, expiresIn}
+    Frontend->>Frontend: Store tokens
+    Frontend-->>User: Redirect to dashboard
+```
+
+#### Create Invoice Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant API as Invoice API
+    participant Handler as CreateInvoiceHandler
+    participant Domain as Invoice Entity
+    participant Repo as InvoiceRepository
+    participant DB as PostgreSQL
+
+    User->>Frontend: Fill invoice form with line items
+    Frontend->>Frontend: Calculate totals client-side
+    Frontend->>API: POST /api/invoices (with JWT)
+    API->>API: Validate JWT
+    API->>Handler: CreateInvoiceCommand
+    Handler->>Domain: new Invoice(command)
+    Domain->>Domain: Validate business rules
+    Domain->>Domain: Calculate line item totals
+    Domain->>Domain: Calculate invoice totals
+    Handler->>Repo: save(invoice)
+    Repo->>DB: INSERT invoice
+    DB-->>Repo: Invoice saved
+    Repo-->>Handler: Invoice entity
+    Handler->>Handler: Map to InvoiceResponseDTO
+    Handler-->>API: InvoiceResponseDTO
+    API-->>Frontend: 201 Created + invoice data
+    Frontend-->>User: Show success message
+    Frontend->>Frontend: Navigate to invoice detail
+```
+
+#### Record Payment Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant PaymentAPI as Payment API
+    participant Handler as RecordPaymentHandler
+    participant InvoiceRepo as InvoiceRepository
+    participant PaymentRepo as PaymentRepository
+    participant Invoice as Invoice Entity
+    participant DB as PostgreSQL
+
+    User->>Frontend: Enter payment details
+    Frontend->>PaymentAPI: POST /api/invoices/{id}/payments (with JWT)
+    PaymentAPI->>PaymentAPI: Validate JWT
+    PaymentAPI->>Handler: RecordPaymentCommand
+
+    Handler->>InvoiceRepo: findById(invoiceId)
+    InvoiceRepo->>DB: SELECT invoice
+    DB-->>InvoiceRepo: Invoice data
+    InvoiceRepo-->>Handler: Invoice entity
+
+    Handler->>Invoice: validate payment amount <= balance
+    Invoice-->>Handler: Validation passed
+
+    Handler->>Handler: Create Payment entity
+    Handler->>PaymentRepo: save(payment)
+    PaymentRepo->>DB: INSERT payment
+    DB-->>PaymentRepo: Payment saved
+
+    Handler->>Invoice: reduceBalance(payment.amount)
+    Invoice->>Invoice: Update status if fully paid
+    Handler->>InvoiceRepo: save(invoice)
+    InvoiceRepo->>DB: UPDATE invoice
+    DB-->>InvoiceRepo: Invoice updated
+
+    Handler-->>PaymentAPI: PaymentResponseDTO
+    PaymentAPI-->>Frontend: 201 Created + payment data
+    Frontend->>Frontend: Refresh invoice balance
+    Frontend-->>User: Show success message
+```
+
 ### Architectural Patterns
 
 - **Domain-Driven Design (DDD):** Three bounded contexts (Customer, Invoice, Payment) with rich domain models encapsulating business logic - *Rationale:* Ensures business logic remains cohesive and maintainable within domain boundaries
@@ -111,6 +299,82 @@ graph TB
 - **Component-Based UI:** Reusable React components with TypeScript and Shadcn/ui - *Rationale:* Ensures UI consistency and type safety across the application
 - **Container-First Deployment:** Docker containers for all services - *Rationale:* Platform-agnostic deployment with consistent environments
 - **JWT Authentication:** Stateless token-based auth with refresh tokens - *Rationale:* Scalable authentication without server-side session management
+
+### Architectural Decision Records (ADRs)
+
+#### Why Domain-Driven Design?
+
+**Context:** Need to manage complex business logic for invoicing with line items, tax calculations, and payment reconciliation.
+
+**Decision:** Implement DDD with rich domain models that encapsulate business rules.
+
+**Rationale:**
+- Invoice calculations involve complex business logic that belongs in the domain
+- Clear bounded contexts (Customer, Invoice, Payment) map naturally to business concepts
+- Rich domain entities prevent anemic models and scattered business logic
+- Enables ubiquitous language between developers and domain experts
+
+**Consequences:**
+- Steeper learning curve for developers unfamiliar with DDD
+- More code compared to simple CRUD operations
+- Better maintainability and testability of business logic
+- Clear separation of concerns
+
+#### Why CQRS?
+
+**Context:** Read and write operations have different requirements and optimization needs.
+
+**Decision:** Separate command and query operations with distinct handlers and DTOs.
+
+**Rationale:**
+- Write operations need validation, business rules, and transactional consistency
+- Read operations need performance and denormalized data
+- Dashboard queries join multiple entities while commands focus on single aggregates
+- Enables independent optimization of reads vs writes
+
+**Consequences:**
+- More code structure (separate command/query folders)
+- Clear separation makes it easier to understand data flow
+- Can optimize queries without impacting command logic
+- Prepared for event sourcing if needed in the future
+
+#### Why Vertical Slice Architecture?
+
+**Context:** Need to organize code for long-term maintainability and independent feature development.
+
+**Decision:** Organize code by feature (vertical slices) rather than technical layers.
+
+**Rationale:**
+- Each feature (customer, invoice, payment) is self-contained
+- Reduces coupling between features
+- New developers can understand one feature without learning entire codebase
+- Easier to extract features into microservices if needed
+- Follows "high cohesion, low coupling" principle
+
+**Consequences:**
+- Different from traditional layered architecture
+- Some code duplication between slices (acceptable trade-off)
+- Clear feature boundaries improve team collaboration
+- Easier to assign features to different developers
+
+#### Why Monolithic Deployment?
+
+**Context:** Need to choose between monolithic, microservices, or modular monolith architecture.
+
+**Decision:** Deploy as a single monolithic application (modular internally).
+
+**Rationale:**
+- Simpler deployment and operations for assessment project
+- Lower infrastructure costs and complexity
+- Easier debugging and testing
+- Modular structure allows future migration to microservices
+- YAGNI principle - microservices add complexity without current need
+
+**Consequences:**
+- Must scale entire application (can't scale individual features)
+- All features share same database and deployment
+- Simpler CI/CD pipeline
+- Vertical slice architecture provides migration path to microservices
 
 ## Tech Stack
 
