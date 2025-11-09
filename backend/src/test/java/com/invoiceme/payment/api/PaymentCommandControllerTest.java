@@ -79,8 +79,12 @@ class PaymentCommandControllerTest {
             LocalDateTime.now(),
             "user@example.com",
             "INV-2024-0001",
+            new BigDecimal("500.00"),
+            new BigDecimal("400.00"),
+            InvoiceStatus.Sent,
             "Acme Corp",
-            new BigDecimal("400.00")
+            "billing@acme.com",
+            null
         );
 
         when(handler.handle(any(RecordPaymentCommand.class), eq("user@example.com")))
@@ -315,8 +319,12 @@ class PaymentCommandControllerTest {
             LocalDateTime.now(),
             "user@example.com",
             "INV-2024-0001",
+            new BigDecimal("500.00"),
+            new BigDecimal("400.00"),
+            InvoiceStatus.Sent,
             "Acme Corp",
-            new BigDecimal("400.00")
+            "billing@acme.com",
+            null
         );
 
         when(handler.handle(any(RecordPaymentCommand.class), any()))
