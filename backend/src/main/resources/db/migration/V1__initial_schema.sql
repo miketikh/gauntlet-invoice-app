@@ -1,7 +1,5 @@
 -- Initial schema for InvoiceMe application
-
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Note: gen_random_uuid() is built-in to PostgreSQL 13+, no extension needed
 
 -- Customers table
 CREATE TABLE customers (
@@ -9,16 +7,25 @@ CREATE TABLE customers (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
-    address TEXT,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    -- Address fields (from @Embedded Address)
+    street VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(50),
+    postal_code VARCHAR(20),
+    country VARCHAR(100),
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+
+    CONSTRAINT uk_customer_email UNIQUE (email)
 );
 
 CREATE INDEX idx_customers_email ON customers(email);
-CREATE INDEX idx_customers_is_deleted ON customers(is_deleted);
+CREATE INDEX idx_customers_deleted_at ON customers(deleted_at);
 
--- Invoices table (line_items stored as JSON)
+-- Invoices table (line_items stored as JSONB)
 CREATE TABLE invoices (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     invoice_number VARCHAR(50) UNIQUE NOT NULL,
@@ -39,8 +46,11 @@ CREATE TABLE invoices (
     balance DECIMAL(10, 2) NOT NULL DEFAULT 0,
 
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- Optimistic locking version
+    version BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_invoices_customer_id ON invoices(customer_id);
@@ -54,10 +64,10 @@ CREATE TABLE payments (
     invoice_id UUID NOT NULL REFERENCES invoices(id),
     payment_date DATE NOT NULL,
     amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
-    payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('CreditCard', 'BankTransfer', 'Check', 'Cash')),
+    payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('CREDIT_CARD', 'BANK_TRANSFER', 'CHECK', 'CASH')),
     reference VARCHAR(255),
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(255) NOT NULL
 );
 
@@ -69,7 +79,7 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Invoice number sequence

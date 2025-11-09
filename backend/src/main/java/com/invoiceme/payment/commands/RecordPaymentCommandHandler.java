@@ -6,7 +6,7 @@ import com.invoiceme.customer.domain.CustomerRepository;
 import com.invoiceme.invoice.domain.Invoice;
 import com.invoiceme.invoice.domain.InvoiceRepository;
 import com.invoiceme.invoice.domain.exceptions.InvoiceNotFoundException;
-import com.invoiceme.payment.PaymentMapper;
+import com.invoiceme.payment.queries.PaymentMapper;
 import com.invoiceme.payment.domain.Payment;
 import com.invoiceme.payment.domain.PaymentRepository;
 import com.invoiceme.payment.domain.PaymentService;
@@ -47,22 +47,19 @@ public class RecordPaymentCommandHandler {
     private final CustomerRepository customerRepository;
     private final PaymentService paymentService;
     private final IdempotencyService idempotencyService;
-    private final PaymentMapper paymentMapper;
 
     public RecordPaymentCommandHandler(
         PaymentRepository paymentRepository,
         InvoiceRepository invoiceRepository,
         CustomerRepository customerRepository,
         PaymentService paymentService,
-        IdempotencyService idempotencyService,
-        PaymentMapper paymentMapper
+        IdempotencyService idempotencyService
     ) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
         this.paymentService = paymentService;
         this.idempotencyService = idempotencyService;
-        this.paymentMapper = paymentMapper;
     }
 
     /**
@@ -151,16 +148,15 @@ public class RecordPaymentCommandHandler {
             log.info("PaymentRecorded event: paymentId={}, invoiceId={}, newBalance={}, newStatus={}",
                 event.paymentId(), event.invoiceId(), event.newBalance(), event.newStatus());
 
-            // Step 11: Fetch customer name for enriched response
-            String customerName = customerRepository.findById(savedInvoice.getCustomerId())
-                .map(Customer::getName)
-                .orElse("Unknown");
+            // Step 11: Fetch customer for enriched response
+            Customer customer = customerRepository.findById(savedInvoice.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Customer not found for invoice: " + savedInvoice.getId()));
 
             // Step 12: Create response DTO
-            PaymentResponseDTO response = paymentMapper.toResponseDTO(
+            PaymentResponseDTO response = PaymentMapper.toResponseDTO(
                 savedPayment,
                 savedInvoice,
-                customerName
+                customer
             );
 
             // Step 13: Store idempotency record (if key provided)
