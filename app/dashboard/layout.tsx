@@ -111,6 +111,16 @@ export default function DashboardLayout({
                 Customers
               </button>
               <button
+                onClick={() => router.push("/payments")}
+                className={`transition-colors font-medium ${
+                  isActive("/payments")
+                    ? "text-slate-900 dark:text-slate-50 border-b-2 border-slate-900 dark:border-slate-50 pb-1"
+                    : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50"
+                }`}
+              >
+                Payments
+              </button>
+              <button
                 onClick={() => router.push("/settings")}
                 className={`transition-colors font-medium ${
                   isActive("/settings")
@@ -216,6 +226,19 @@ export default function DashboardLayout({
                   }`}
                 >
                   Customers
+                </button>
+                <button
+                  onClick={() => {
+                    router.push("/payments");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`text-left px-4 py-2 rounded-md transition-colors font-medium ${
+                    isActive("/payments")
+                      ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  Payments
                 </button>
                 <button
                   onClick={() => {
