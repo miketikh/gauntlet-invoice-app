@@ -4,6 +4,7 @@ import com.invoiceme.customer.infrastructure.JpaCustomerRepository;
 import com.invoiceme.invoice.domain.InvoiceStatus;
 import com.invoiceme.invoice.infrastructure.JpaInvoiceRepository;
 import com.invoiceme.invoice.queries.dto.DashboardStatsDTO;
+import com.invoiceme.payment.domain.PaymentRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +21,14 @@ public class GetDashboardStatsQueryHandler {
 
     private final JpaInvoiceRepository invoiceRepository;
     private final JpaCustomerRepository customerRepository;
+    private final PaymentRepository paymentRepository;
 
     public GetDashboardStatsQueryHandler(JpaInvoiceRepository invoiceRepository,
-                                         JpaCustomerRepository customerRepository) {
+                                         JpaCustomerRepository customerRepository,
+                                         PaymentRepository paymentRepository) {
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     /**
@@ -45,7 +49,8 @@ public class GetDashboardStatsQueryHandler {
         long totalInvoices = draftInvoices + sentInvoices + paidInvoices;
 
         // Calculate amounts
-        BigDecimal totalRevenue = invoiceRepository.calculateTotalRevenue();
+        // Revenue = total amount actually collected via payments (not just paid invoices)
+        BigDecimal totalRevenue = paymentRepository.calculateTotalCollected();
         BigDecimal outstandingAmount = invoiceRepository.calculateOutstandingAmount();
         BigDecimal overdueAmount = invoiceRepository.calculateOverdueAmount();
 

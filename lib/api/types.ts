@@ -417,3 +417,15 @@ export interface PaymentStatistics {
   byMethod: Record<PaymentMethod, number>;
   byMonth: Record<string, number>;
 }
+
+// Dashboard Statistics
+export interface DashboardStatsDTO {
+  totalCustomers: number;
+  totalInvoices: number;
+  draftInvoices: number;
+  sentInvoices: number;
+  paidInvoices: number;
+  totalRevenue: number;
+  outstandingAmount: number;
+  overdueAmount: number;
+}

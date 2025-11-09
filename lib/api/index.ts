@@ -7,6 +7,7 @@ export { apiClient, createApiClient } from './client';
 export * from './invoices';
 export * from './customers';
 export * from './payments';
+export * from './dashboard';
 export type {
   LoginRequest,
   LoginResponse,
@@ -35,4 +36,5 @@ export type {
   PaymentMethod,
   RecordPaymentDTO,
   PaymentResponseDTO,
+  DashboardStatsDTO,
 } from './types';
