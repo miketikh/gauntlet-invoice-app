@@ -4,6 +4,7 @@ import com.invoiceme.customer.domain.Customer;
 import com.invoiceme.customer.domain.CustomerRepository;
 import com.invoiceme.customer.domain.events.CustomerUpdated;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class UpdateCustomerCommandHandler {
      * @return Updated customer
      * @throws IllegalArgumentException if customer not found or email conflict
      */
+    @CacheEvict(value = {"customerList", "customers", "dashboardStats", "invoiceList"}, allEntries = true)
     @Transactional
     public Customer handle(UpdateCustomerCommand command) {
         // Find customer

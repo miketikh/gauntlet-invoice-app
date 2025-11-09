@@ -4,6 +4,7 @@ import com.invoiceme.customer.domain.Customer;
 import com.invoiceme.customer.domain.CustomerRepository;
 import com.invoiceme.customer.domain.events.CustomerDeleted;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class DeleteCustomerCommandHandler {
      * @param command The delete customer command
      * @throws IllegalArgumentException if customer not found
      */
+    @CacheEvict(value = {"customerList", "customers", "dashboardStats"}, allEntries = true)
     @Transactional
     public void handle(DeleteCustomerCommand command) {
         // Find customer

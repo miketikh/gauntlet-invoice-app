@@ -4,7 +4,7 @@ spring:
 
   # Database Configuration
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:54322/postgres}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/invoiceme?sslmode=disable}
     username: ${DATABASE_USER:postgres}
     password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -20,6 +20,12 @@ spring:
           lob:
             non_contextual_creation: true
     show-sql: ${SHOW_SQL:false}
+
+  # Cache configuration
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=5m
 
   # Flyway for database migrations
   flyway:
@@ -47,6 +53,11 @@ server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
+  # Gzip compression for API responses
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
+    min-response-size: 1024
 
 # CORS Configuration
 cors:
@@ -55,16 +66,29 @@ cors:
   allowed-headers: "*"
   allow-credentials: true
 
-# Actuator for health checks
+# Actuator for health checks and metrics
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,caches,httptrace,prometheus
       base-path: /actuator
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      simple:
+        enabled: true
+    enable:
+      jvm: true
+      process: true
+      system: true
+      http: true
+      hikaricp: true
+      cache: true
+    tags:
+      application: ${spring.application.name}
 
 # Logging
 logging:

@@ -35,17 +35,13 @@ public interface CustomerQueryRepository extends JpaCustomerRepository {
 
     /**
      * Counts total invoices for a customer
-     * TODO: Implement when Invoice domain is available (Story 1.5+)
-     * For now, returns 0 as placeholder
      */
-    @Query("SELECT 0")
+    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.customerId = :customerId")
     Integer countInvoicesByCustomerId(@Param("customerId") UUID customerId);
 
     /**
-     * Calculates outstanding balance for a customer (sum of unpaid invoices)
-     * TODO: Implement when Invoice domain is available (Story 1.5+)
-     * For now, returns 0.00 as placeholder
+     * Calculates outstanding balance for a customer (sum of unpaid invoice balances)
      */
-    @Query("SELECT 0.00")
+    @Query("SELECT COALESCE(SUM(i.balance), 0) FROM Invoice i WHERE i.customerId = :customerId AND i.balance > 0")
     BigDecimal calculateOutstandingBalance(@Param("customerId") UUID customerId);
 }
