@@ -68,7 +68,7 @@ const handleAuthError = (error: unknown): never => {
       throw new AuthError(
         'Network error: Unable to reach authentication server',
         undefined,
-        { message: 'Network error' }
+        undefined
       );
     }
   }
@@ -77,7 +77,7 @@ const handleAuthError = (error: unknown): never => {
   throw new AuthError(
     error instanceof Error ? error.message : 'An unexpected error occurred',
     undefined,
-    { message: 'Unknown error' }
+    undefined
   );
 };
 
