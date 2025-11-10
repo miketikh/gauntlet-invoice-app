@@ -76,7 +76,7 @@ export default function InvoiceDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 max-w-[1380px]">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-center gap-2 py-8">
@@ -91,7 +91,7 @@ export default function InvoiceDetailPage() {
 
   if (error || !currentInvoice) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 max-w-[1380px]">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
@@ -112,7 +112,7 @@ export default function InvoiceDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 max-w-[1380px]">
       <InvoiceDetail
         invoice={currentInvoice}
         onSend={handleSend}

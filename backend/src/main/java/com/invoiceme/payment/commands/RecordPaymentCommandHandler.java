@@ -16,6 +16,7 @@ import com.invoiceme.payment.exceptions.PaymentExceedsBalanceException;
 import com.invoiceme.payment.queries.PaymentResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,6 +73,7 @@ public class RecordPaymentCommandHandler {
      * @throws InvoiceNotSentException if invoice is not in Sent status
      * @throws PaymentExceedsBalanceException if payment amount exceeds invoice balance
      */
+    @CacheEvict(value = {"dashboardStats"}, allEntries = true)
     @Transactional
     public PaymentResponseDTO handle(RecordPaymentCommand command, String userId) {
         log.info("Recording payment for invoice {}, amount: {}, user: {}",

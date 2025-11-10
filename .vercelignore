@@ -1,0 +1,44 @@
+# Backend (Java/Spring Boot)
+backend/
+
+# Java files
+*.java
+*.class
+*.jar
+
+# Maven
+mvnw
+mvnw.cmd
+pom.xml
+.mvn/
+
+# Testing
+coverage/
+__tests__/
+e2e/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+jest.config.js
+jest.setup.js
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+nginx.conf
+.dockerignore
+
+# Development
+.vscode/
+.claude/
+.bmad-core/
+.github/
+
+# Environment examples (don't need in deployment)
+.env.example

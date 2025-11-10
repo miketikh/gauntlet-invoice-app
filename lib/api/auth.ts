@@ -12,8 +12,8 @@ import type {
   ApiError,
 } from './types';
 
-// API base URL - backend running on localhost:8080
-const API_BASE_URL = 'http://localhost:8080/api';
+// API base URL - uses environment variable with fallback to localhost for development
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 /**
  * Create axios instance for authentication API

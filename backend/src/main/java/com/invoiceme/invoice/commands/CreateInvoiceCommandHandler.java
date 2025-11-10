@@ -12,6 +12,7 @@ import com.invoiceme.invoice.domain.LineItem;
 import com.invoiceme.invoice.domain.events.InvoiceCreated;
 import com.invoiceme.invoice.domain.exceptions.InvoiceValidationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ public class CreateInvoiceCommandHandler {
      * @return InvoiceResponseDTO with created invoice details
      * @throws InvoiceValidationException if validation fails
      */
+    @CacheEvict(value = {"dashboardStats"}, allEntries = true)
     @Transactional
     public InvoiceResponseDTO handle(CreateInvoiceCommand command) {
         // Validate customer exists

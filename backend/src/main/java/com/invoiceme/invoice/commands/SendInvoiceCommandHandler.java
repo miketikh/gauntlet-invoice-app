@@ -10,6 +10,7 @@ import com.invoiceme.invoice.domain.InvoiceStatus;
 import com.invoiceme.invoice.domain.exceptions.InvoiceNotFoundException;
 import com.invoiceme.invoice.domain.exceptions.InvoiceValidationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class SendInvoiceCommandHandler {
      * @throws InvoiceNotFoundException if invoice not found
      * @throws InvoiceValidationException if validation fails
      */
+    @CacheEvict(value = {"dashboardStats"}, allEntries = true)
     @Transactional
     public InvoiceResponseDTO handle(SendInvoiceCommand command) {
         // Load invoice

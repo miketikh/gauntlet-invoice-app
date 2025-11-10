@@ -13,6 +13,7 @@ import com.invoiceme.invoice.domain.exceptions.InvoiceNotFoundException;
 import com.invoiceme.invoice.domain.exceptions.InvoiceValidationException;
 import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ public class UpdateInvoiceCommandHandler {
      * @throws InvoiceValidationException if validation fails
      * @throws OptimisticLockException if version mismatch
      */
+    @CacheEvict(value = {"dashboardStats"}, allEntries = true)
     @Transactional
     public InvoiceResponseDTO handle(UpdateInvoiceCommand command) {
         // Load existing invoice

@@ -39,7 +39,7 @@ import {
   Printer,
   Download,
   ArrowLeft,
-  DollarSign,
+  CreditCard,
 } from "lucide-react";
 import type { InvoiceResponseDTO, InvoiceStatus } from "@/lib/api/types";
 import { SendConfirmationDialog } from "./send-confirmation-dialog";
@@ -210,7 +210,7 @@ export function InvoiceDetail({
   return (
     <div className="space-y-6">
       {/* Action Buttons (hidden when printing) */}
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex items-center justify-between gap-4 print:hidden">
         <Button
           variant="outline"
           size="sm"
@@ -220,7 +220,7 @@ export function InvoiceDetail({
           Back to Invoices
         </Button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-wrap justify-end">
           {/* Edit - only for Draft */}
           {isDraft && (
             <Button
@@ -252,12 +252,12 @@ export function InvoiceDetail({
                 <TooltipTrigger asChild>
                   <div>
                     <Button
-                      variant="default"
+                      variant="outline"
                       size="sm"
                       onClick={() => openPaymentModal(invoice.id)}
                       disabled={!canRecordPayment}
                     >
-                      <DollarSign className="h-4 w-4 mr-2" />
+                      <CreditCard className="h-4 w-4 mr-2" />
                       Record Payment
                     </Button>
                   </div>
