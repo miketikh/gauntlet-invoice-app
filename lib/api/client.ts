@@ -7,8 +7,8 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { ApiError } from './types';
 import { setupErrorInterceptor } from './error-interceptor';
 
-// API base URL
-const API_BASE_URL = 'http://localhost:8080/api';
+// API base URL - use environment variable or fallback to localhost
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 /**
  * Create the main API client with interceptors
