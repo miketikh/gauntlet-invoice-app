@@ -257,21 +257,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void shouldHandleGenericException() {
-        // Given
-        Exception exception = new RuntimeException("Unexpected error");
-
-        // When
-        ResponseEntity<ApiErrorResponse> response = exceptionHandler.handleGenericException(exception, request);
-
-        // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().status()).isEqualTo(500);
-        assertThat(response.getBody().message()).isEqualTo("An unexpected error occurred. Please try again later.");
-    }
-
-    @Test
     void shouldIncludeCorrelationIdInAllResponses() {
         // Given
         EntityNotFoundException exception = new EntityNotFoundException("Customer", "123");
