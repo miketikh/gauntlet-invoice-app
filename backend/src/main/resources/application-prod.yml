@@ -1,9 +1,9 @@
 # Production profile configuration
+# Note: Uses PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD from Railway
 spring:
   datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    # Override URL to require SSL for Railway
+    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=require
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:20}
       minimum-idle: ${DB_POOL_MIN_IDLE:5}
